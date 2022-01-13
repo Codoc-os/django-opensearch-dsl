@@ -31,7 +31,8 @@ LONG_DESCRIPTION = (
 )
 REQUIREMENTS = [
     'opensearch-dsl~=1.0.0',
-    'dateutils'
+    'dateutils',
+    'more-itertools',
 ]
 
 setup(

@@ -7,6 +7,7 @@ from typing import Optional, Iterable
 
 from django.db import models
 from django.db.models import QuerySet, Q
+from more_itertools import chunked
 from opensearch_dsl import Document as DSLDocument
 from opensearchpy.helpers import bulk, parallel_bulk
 
@@ -83,7 +84,11 @@ class Document(DSLDocument):
     def get_indexing_queryset(self, verbose: bool = False, filter_: Optional[Q] = None, exclude: Optional[Q] = None,
                               count: int = None, action: OpensearchAction = OpensearchAction.INDEX,
                               stdout: io.FileIO = sys.stdout) -> Iterable:
-        """Divide the queryset into chunks."""
+        """Divide the queryset into chunks.
+
+        First fetches only PKs from the whole queryset,
+        then fetches entire objects by chunks and yields them
+        """
         chunk_size = self.django.queryset_pagination
         qs = self.get_queryset(filter_=filter_, exclude=exclude, count=count)
         count = qs.count()
@@ -95,11 +100,15 @@ class Document(DSLDocument):
         start = time.time()
         if verbose:
             stdout.write(f"{action} {model}: 0% ({self._eta(start, done, count)})\r")
-        while done < count:
+
+        for chunk in chunked(
+            qs.values_list('pk', flat=True),
+            chunk_size
+        ):
             if verbose:
                 stdout.write(f"{action} {model}: {round(i / count * 100)}% ({self._eta(start, done, count)})\r")
 
-            for obj in qs[i: i + chunk_size]:
+            for obj in self.get_queryset().filter(pk__in=chunk):
                 done += 1
                 yield obj
 
