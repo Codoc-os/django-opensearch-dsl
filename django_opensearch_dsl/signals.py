@@ -49,6 +49,15 @@ class BaseSignalProcessor(object):
         Update the related objects either.
         """
         registry.update(instance)
+        registry.update_related(instance)
+
+    def handle_pre_delete(self, sender, instance, **kwargs):
+        """Handle removing of instance object from related models instance.
+
+        We need to do this before the real delete otherwise the relation
+        doesn't exists anymore and we can't get the related models instance.
+        """
+        registry.delete_related(instance)
 
     def handle_delete(self, sender, instance, **kwargs):
         """Handle delete.
