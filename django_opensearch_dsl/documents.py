@@ -7,12 +7,13 @@ from typing import Optional, Iterable
 
 from django.db import models
 from django.db.models import QuerySet, Q
-from opensearch_dsl import Document as DSLDocument
+from opensearch_dsl.document import Document as DSLDocument, IndexMeta as DSLIndexMeta
 from opensearchpy.helpers import bulk, parallel_bulk
 
 from . import fields
 from .apps import DODConfig
 from .exceptions import ModelFieldNotMappedError
+from .indices import Index
 from .management.enums import OpensearchAction
 from .search import Search
 from .signals import post_index
@@ -44,7 +45,18 @@ model_field_class_to_field_class = {
 }
 
 
-class Document(DSLDocument):
+class IndexMeta(DSLIndexMeta):
+    """A specialized DSL IndexMeta that specializes the Document Index class."""
+
+    def __new__(mcs, *args, **kwargs):
+        """Override `_index` with django_opensearch_dsl Index class."""
+        new_cls = super().__new__(mcs, *args, **kwargs)
+        if new_cls._index and new_cls._index._name:  # noqa
+            new_cls._index.__class__ = Index  # noqa
+        return new_cls
+
+
+class Document(DSLDocument, metaclass=IndexMeta):
     """Allow the definition of Opensearch' index using Django `Model`."""
 
     _prepared_fields = []
