@@ -45,12 +45,12 @@ Indices and documents can be managed through the `opensearch` management command
 
 ```text
 usage: manage.py opensearch index [-h] [--force] [--ignore-error]
-                                  {create,delete,rebuild} [INDEX [INDEX ...]]
+                                  {create,delete,rebuild,activate} [INDEX [INDEX ...]]
 
 Manage the creation and deletion of indices.
 
 positional arguments:
-  {create,delete,rebuild}
+  {create,delete,rebuild,activate}
                         Whether you want to create, delete or rebuild the indices.
   INDEX                 Only manage the given indices.
 
@@ -58,6 +58,8 @@ optional arguments:
   -h, --help            show this help message and exit
   --force               Do not ask for confirmation.
   --ignore-error        Do not stop on error.
+  --versioned           Set a timestamped name to the actual index
+  --version VERSION     Only for activate action: version name to activate
 ```
 
 ### Description
@@ -83,8 +85,11 @@ Sample output :
 
 ```text
 django_dummy_app
-[X] country (0 documents)
-[ ] continent
+[X] country. Following index versions exist:
+    - country--20220813172923248055 Active (0 documents)
+    - country--20220813172923212345 (0 documents)
+[ ] continent. Following index versions exist:
+    - continent--20220813172923248055 (0 documents)
 [X] event (2361 documents)
 ```
 

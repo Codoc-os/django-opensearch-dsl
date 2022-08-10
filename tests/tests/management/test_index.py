@@ -18,6 +18,8 @@ class IndexTestCase(SimpleTestCase):
     def setUp(self) -> None:
         indices = registry.get_indices()
         for i in indices:
+            for v in i.get_versions():
+                v.delete()
             i.delete(ignore_unavailable=True)
 
     def test_index_creation_all(self):
@@ -40,6 +42,24 @@ class IndexTestCase(SimpleTestCase):
         self.assertTrue(country_document._index.exists())
         self.assertFalse(event_document._index.exists())
 
+    def test_index_creation_one_versioned(self):
+        continent_document = ContinentDocument()
+        country_document = CountryDocument()
+        event_document = EventDocument()
+
+        self.assertFalse(continent_document._index.exists())
+        self.assertFalse(country_document._index.exists())
+        self.assertFalse(event_document._index.exists())
+
+        self.call_command("opensearch", "index", "create", country_document.Index.name, versioned=True, force=True)
+
+        self.assertFalse(continent_document._index.exists())
+        self.assertFalse(country_document._index.exists())
+        self.assertFalse(event_document._index.exists())
+        self.assertEqual(len(continent_document._index.get_versions()), 0)
+        self.assertEqual(len(country_document._index.get_versions()), 1)
+        self.assertEqual(len(event_document._index.get_versions()), 0)
+
     def test_index_creation_two(self):
         continent_document = ContinentDocument()
         country_document = CountryDocument()
@@ -59,6 +79,30 @@ class IndexTestCase(SimpleTestCase):
         self.assertFalse(continent_document._index.exists())
         self.assertTrue(country_document._index.exists())
         self.assertTrue(event_document._index.exists())
+
+    def test_index_creation_two_versions(self):
+        continent_document = ContinentDocument()
+        country_document = CountryDocument()
+        event_document = EventDocument()
+
+        self.assertFalse(continent_document._index.exists())
+        self.assertFalse(country_document._index.exists())
+        self.assertFalse(event_document._index.exists())
+        self.call_command(
+            "opensearch",
+            "index",
+            "create",
+            country_document.Index.name,
+            event_document.Index.name,
+            versioned=True,
+            force=True,
+        )
+        self.assertFalse(continent_document._index.exists())
+        self.assertFalse(country_document._index.exists())
+        self.assertFalse(event_document._index.exists())
+        self.assertEqual(len(continent_document._index.get_versions()), 0)
+        self.assertEqual(len(country_document._index.get_versions()), 1)
+        self.assertEqual(len(event_document._index.get_versions()), 1)
 
     def test_index_creation_error(self):
         country_document = CountryDocument()
@@ -145,6 +189,33 @@ class IndexTestCase(SimpleTestCase):
         self.assertTrue(continent_document._index.exists())
         self.assertTrue(country_document._index.exists())
         self.assertTrue(event_document._index.exists())
+
+    def test_index_version_activation(self):
+        continent_document = ContinentDocument()
+        country_document = CountryDocument()
+        event_document = EventDocument()
+
+        self.assertFalse(continent_document._index.exists())
+        self.assertFalse(country_document._index.exists())
+        self.assertFalse(event_document._index.exists())
+
+        self.call_command("opensearch", "index", "create", country_document.Index.name, versioned=True, force=True)
+
+        self.assertFalse(country_document._index.exists())
+        self.assertEqual(len(country_document._index.get_versions()), 1)
+
+        self.call_command(
+            "opensearch",
+            "index",
+            "activate",
+            country_document.Index.name,
+            version=country_document._index.get_versions()[0]._name,
+            force=True,
+        )
+
+        self.assertTrue(country_document._index.exists())
+        self.assertEqual(len(country_document._index.get_versions()), 1)
+        self.assertIsNotNone(country_document._index.get_active_version())
 
     def test_unknown_index(self):
         with self.assertRaises(SystemExit):

@@ -13,6 +13,7 @@ from django.core.exceptions import FieldError
 from django.core.management import BaseCommand
 from django.core.management.base import OutputWrapper
 from django.db.models import Q
+from opensearch_dsl import Index
 
 from django_opensearch_dsl.registries import registry
 from ..enums import OpensearchAction
@@ -57,13 +58,27 @@ class Command(BaseCommand):
             module = index._doc_types[0].__module__.split(".")[-2]  # noqa
             exists = index.exists()
             checkbox = f"[{'X' if exists else ' '}]"
-            count = f" ({index.search().count()} documents)" if exists else ""
-            result[module].append(f"{checkbox} {index._name}{count}")
+            versions = index.get_versions()
+            if versions:
+                details = ". Following index versions exist:"
+                for version in versions:
+                    is_active = ""
+                    if version.exists_alias(name=index._name):
+                        is_active = self.style.SUCCESS("Active")
+                    count = f" ({version.search().count()} documents)"
+                    details += f"\n    - {version._name} {is_active}{count}"
+            elif exists:
+                details = f" ({index.search().count()} documents)"
+            else:
+                details = ""
+            result[module].append(f"{checkbox} {index._name}{details}")
         for app, indices in result.items():
             self.stdout.write(self.style.MIGRATE_LABEL(app))
             self.stdout.write("\n".join(indices))
 
-    def _manage_index(self, action, indices, force, verbosity, ignore_error, **options):  # noqa
+    def _manage_index(
+        self, action, indices, versioned, version, suffix, force, verbosity, ignore_error, **options
+    ):  # noqa
         """Manage the creation and deletion of indices."""
         action = OpensearchAction(action)
         known = registry.get_indices()
@@ -109,15 +124,22 @@ class Command(BaseCommand):
                 self.stdout.flush()
             try:
                 if action == OpensearchAction.CREATE:
-                    index.create()
+                    if versioned:
+                        index = index.create_new_version(suffix=suffix)
+                    else:
+                        index.create()
                 elif action == OpensearchAction.DELETE:
+                    if version:
+                        index = index.get_version(version)
                     index.delete()
-                else:
+                elif action == OpensearchAction.REBUILD:
                     try:
                         index.delete()
                     except opensearchpy.exceptions.NotFoundError:
                         pass
                     index.create()
+                elif action == OpensearchAction.ACTIVATE:
+                    index.activate_version(version)
             except opensearchpy.exceptions.NotFoundError:
                 if verbosity or not ignore_error:
                     self.stderr.write(f"{pp} index '{index._name}'...{self.style.ERROR('Error (not found)')}")  # noqa
@@ -251,15 +273,21 @@ class Command(BaseCommand):
         subparser.add_argument(
             "action",
             type=str,
-            help="Whether you want to create, delete or rebuild the indices.",
+            help="Whether you want to create, delete or rebuild the indices. Or activate an index version.",
             choices=[
                 OpensearchAction.CREATE.value,
                 OpensearchAction.DELETE.value,
                 OpensearchAction.REBUILD.value,
+                OpensearchAction.ACTIVATE.value,
             ],
         )
         subparser.add_argument("--force", action="store_true", default=False, help="Do not ask for confirmation.")
         subparser.add_argument("--ignore-error", action="store_true", default=False, help="Do not stop on error.")
+        subparser.add_argument(
+            "--versioned", action="store_true", default=False, help="Set a timestamped name to the actual index"
+        )
+        subparser.add_argument("--version", help="Only for activate action: version name to activate")
+        subparser.add_argument("--suffix", default="", help="Only for create action: optional version suffix")
         subparser.add_argument(
             "indices",
             type=str,

@@ -8,6 +8,7 @@ class OpensearchAction(str, Enum):
     UPDATE = ("update", "updating", "updated")
     CREATE = ("create", "creating", "created")
     REBUILD = ("rebuild", "rebuilding", "rebuilded")
+    ACTIVATE = ("activate", "activating", "activated")
     LIST = ("list", "listing", "listed")
     DELETE = ("delete", "deleting", "deleted")
     MANAGE = ("manage", "managing", "managed")
