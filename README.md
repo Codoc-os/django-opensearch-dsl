@@ -26,6 +26,7 @@ at [https://django-opensearch-dsl.readthedocs.io](https://django-opensearch-dsl.
 - Opensearch auto mapping from Django models fields.
 - Complex field type support (`ObjectField`, `NestedField`).
 - Index fast using `parallel` indexing.
+- Zero-downtime index migration for when the document mapping changes
 
 ## Requirements
 

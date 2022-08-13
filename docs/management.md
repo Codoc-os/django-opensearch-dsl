@@ -101,12 +101,12 @@ django_dummy_app
 usage: manage.py opensearch document [-h] [-f [FILTERS [FILTERS ...]]]
                                      [-e [EXCLUDES [EXCLUDES ...]]] [--force]
                                      [-i [INDICES [INDICES ...]]] [-c COUNT]
-                                     [-p] [-r] [-m] {index,delete,update}
+                                     [-p] [-r] [-m] {index,delete,update,migrate}
 
 Manage the indexation and creation of documents.
 
 positional arguments:
-  {index,delete,update}
+  {index,delete,update,migrate}
                         Whether you want to create, delete or rebuild the indices.
 
 optional arguments:
@@ -145,6 +145,7 @@ This command allows you to index your model into Opensearch. It takes a required
 * `index` Index the documents, already indexed documents will be reindexed if you do not use the `--missing` option.
 * `delete` Documents will be deleted from the index.
 * `update` Update already indexed documents.
+* `migrate` Index the documents into a new Index version while letting the active version available, then activate the new Index version.
 
 ***Choosing indices***
 
