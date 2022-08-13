@@ -208,18 +208,18 @@ class Document(DSLDocument, metaclass=IndexMeta):
         """
         return object_instance.pk
 
-    def _prepare_action(self, object_instance, action):
+    def _prepare_action(self, object_instance, action, index=None):
         return {
             "_op_type": action,
-            "_index": self._index._name,  # noqa
+            "_index": index or self._index._name,  # noqa
             "_id": self.generate_id(object_instance),
             "_source" if action != "update" else "doc": (self.prepare(object_instance) if action != "delete" else None),
         }
 
-    def _get_actions(self, object_list, action):
+    def _get_actions(self, object_list, action, index=None):
         for object_instance in object_list:
             if action == "delete" or self.should_index_object(object_instance):
-                yield self._prepare_action(object_instance, action)
+                yield self._prepare_action(object_instance, action, index=index)
 
     def _bulk(self, *args, parallel=False, using=None, **kwargs):
         """Helper for switching between normal and parallel bulk operation."""
@@ -235,7 +235,7 @@ class Document(DSLDocument, metaclass=IndexMeta):
         """
         return True
 
-    def update(self, thing, action, *args, refresh=None, using=None, **kwargs):  # noqa
+    def update(self, thing, action, *args, refresh=None, using=None, index=None, **kwargs):  # noqa
         """Update document in OS for a model, iterable of models or queryset."""
         if refresh is None:
             refresh = getattr(self.Index, "auto_refresh", DODConfig.auto_refresh_enabled())
@@ -245,4 +245,6 @@ class Document(DSLDocument, metaclass=IndexMeta):
         else:
             object_list = thing
 
-        return self._bulk(self._get_actions(object_list, action), *args, refresh=refresh, using=using, **kwargs)
+        return self._bulk(
+            self._get_actions(object_list, action, index=index), *args, refresh=refresh, using=using, **kwargs
+        )
