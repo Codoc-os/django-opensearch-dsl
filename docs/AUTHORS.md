@@ -11,7 +11,7 @@
 
 ---
 
-## Original [`django-opensearch-dsl`](https://github.com/qcoumes/django-opensearch-dsl) project
+## Original [`django-elasticsearch-dsl`](https://github.com/django-es/django-elasticsearch-dsl) project
 
 ### Development Lead
 
