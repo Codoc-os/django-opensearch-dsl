@@ -11,7 +11,6 @@ class OpensearchAction(str, Enum):
     ACTIVATE = ("activate", "activating", "activated")
     LIST = ("list", "listing", "listed")
     DELETE = ("delete", "deleting", "deleted")
-    MIGRATE = ("migrate", "migrating", "migrated")
 
     def __new__(cls, value: str, present_participle: str, past: str):  # noqa: D102
         obj = str.__new__(cls, value)

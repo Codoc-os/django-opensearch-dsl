@@ -170,7 +170,6 @@ class Command(BaseCommand):
         count,
         refresh,
         missing,
-        activate,
         **options,
     ):  # noqa
         """Manage the creation and deletion of indices."""
@@ -238,13 +237,10 @@ class Command(BaseCommand):
         result = "\n"
         for index, kwargs in zip(indices, kwargs_list):
             document = index._doc_types[0]()  # noqa
-            if action == OpensearchAction.MIGRATE:
-                success, errors = document.migrate(activate=activate)
-            else:
-                qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
-                success, errors = document.update(
-                    qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
-                )
+            qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
+            success, errors = document.update(
+                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
+            )
 
             success_str = self.style.SUCCESS(success) if success else success
             errors_str = self.style.ERROR(len(errors)) if errors else len(errors)
@@ -322,12 +318,11 @@ class Command(BaseCommand):
         subparser.add_argument(
             "action",
             type=str,
-            help="Whether you want to create, delete, rebuild or migrate the indices.",
+            help="Whether you want to create, delete or rebuild the indices.",
             choices=[
                 OpensearchAction.INDEX.value,
                 OpensearchAction.DELETE.value,
                 OpensearchAction.UPDATE.value,
-                OpensearchAction.MIGRATE.value,
             ],
         )
         subparser.add_argument(
@@ -386,13 +381,6 @@ class Command(BaseCommand):
             action="store_true",
             default=False,
             help="When used with 'index' action, only index documents not indexed yet.",
-        )
-        subparser.add_argument(
-            "-a",
-            "--activate",
-            action="store_true",
-            default=False,
-            help="When used with 'migrate' action, activate new Index version immediately.",
         )
 
         self.usage = parser.format_usage()

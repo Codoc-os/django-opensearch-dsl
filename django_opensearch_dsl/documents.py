@@ -248,19 +248,3 @@ class Document(DSLDocument, metaclass=IndexMeta):
         return self._bulk(
             self._get_actions(object_list, action, index=index), *args, refresh=refresh, using=using, **kwargs
         )
-
-    def migrate(self, using=None, activate=False):
-        """Migrate the Document into a new Index version.
-
-        1. Create a new Index version.
-        2. Index the whole QuerySet to the newly-created Index version.
-        3. If asked, activate.
-        """
-        new_index = self._index.create_new_version()._name  # noqa
-
-        success, errors = self.update(self.get_indexing_queryset(), "index", using=using, index=new_index)
-
-        if activate:
-            self._index.activate_version(new_index)
-
-        return success, errors
