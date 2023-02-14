@@ -160,5 +160,16 @@ class DocumentRegistry:
 
         return set(self._indices.keys())
 
+    def get_index_versions(self, models=None):
+        """Get all index versions in the registry or the indices for a list of models."""
+        versions = list()
+        for index, docs in self._indices.items():
+            for doc in docs:
+                if models is not None and doc.django.model not in models:
+                    continue
+            versions.extend(index.get_versions())
+
+        return versions
+
 
 registry = DocumentRegistry()

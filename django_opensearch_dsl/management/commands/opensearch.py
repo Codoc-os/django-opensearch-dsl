@@ -177,7 +177,7 @@ class Command(BaseCommand):
     ):  # noqa
         """Manage the creation and deletion of indices."""
         action = OpensearchAction(action)
-        known = registry.get_indices()
+        known = registry.get_index_versions()
         filter_ = functools.reduce(operator.and_, (Q(**{k: v}) for k, v in filters)) if filters else None
         exclude = functools.reduce(operator.and_, (Q(**{k: v}) for k, v in excludes)) if excludes else None
 
