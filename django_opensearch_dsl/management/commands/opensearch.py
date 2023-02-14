@@ -125,7 +125,10 @@ class Command(BaseCommand):
             try:
                 if action == OpensearchAction.CREATE:
                     if versioned:
-                        index = index.create_new_version(suffix=suffix)
+                        index_version = index.create_new_version(suffix=suffix)
+                        if len(index.get_versions()) == 1:
+                            index.activate_version(index_version._name)
+                        index = index_version
                     else:
                         index.create()
                 elif action == OpensearchAction.DELETE:
