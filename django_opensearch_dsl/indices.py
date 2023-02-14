@@ -29,7 +29,7 @@ class Index(DSLIndex):
     def get_versions(self, using=None):
         """Return a name-sorted list of Index objects named after this one."""
         return [
-            Index(name)
+            self.clone(name=name)
             for name in sorted(
                 self._get_connection(using=using)
                 .indices.get(f"{self._name}{self.__class__.VERSION_NAME_SEPARATOR}*")
