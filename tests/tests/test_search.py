@@ -1,5 +1,5 @@
 from django.test import TestCase
-from opensearch_dsl import Q
+from opensearchpy.helpers.query import Q
 
 from django_dummy_app.documents import CountryDocument, ContinentDocument
 from django_dummy_app.models import Country, Continent

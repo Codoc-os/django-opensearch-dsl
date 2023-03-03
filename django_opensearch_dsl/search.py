@@ -1,12 +1,12 @@
 from django.db.models import Case, When
 from django.db.models.fields import IntegerField
 
-from opensearch_dsl import Search as DSLSearch
-from opensearch_dsl.connections import connections
+from opensearchpy.helpers.search import Search as DSLSearch
+from opensearchpy.connection.connections import connections
 
 
 class Search(DSLSearch):
-    """Subclass of `opensearch_dsl.Search` with some utility methods."""
+    """Subclass of `opensearchpy.helpers.search.Search` with some utility methods."""
 
     def __init__(self, **kwargs):
         self._model = kwargs.pop("model", None)

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from django.db.models import QuerySet
-from opensearch_dsl import Q
+from opensearchpy.helpers.query import Q
 
 from django_opensearch_dsl import Document, fields
 from django_opensearch_dsl.registries import registry

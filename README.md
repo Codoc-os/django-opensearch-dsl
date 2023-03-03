@@ -62,7 +62,7 @@ OPENSEARCH_DSL = {
 ```
 
 `OPENSEARCH_DSL` is then passed
-to [`opensearch_dsl_py.connections.configure`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
+to [`opensearchpy.connection.connections.configure`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
 .
 
 ## Create Document Classes
