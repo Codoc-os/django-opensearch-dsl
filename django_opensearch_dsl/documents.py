@@ -7,7 +7,7 @@ from typing import Optional, Iterable
 
 from django.db import models
 from django.db.models import QuerySet, Q
-from opensearchpy.helpers.documents import Document as DSLDocument
+from opensearchpy.helpers.document import Document as DSLDocument
 from opensearchpy.helpers import bulk, parallel_bulk
 
 from . import fields
