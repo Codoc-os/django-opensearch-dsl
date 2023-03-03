@@ -11,15 +11,15 @@ Django Opensearch DSL
 [![CodeFactor](https://www.codefactor.io/repository/github/Codoc-os/django-opensearch-dsl/badge)](https://www.codefactor.io/repository/github/Codoc-os/django-opensearch-dsl)
 
 **Django Opensearch DSL** is a package that allows the indexing of Django models in opensearch. It is built as a thin
-wrapper around [`opensearch-dsl-py`](https://github.com/opensearch-project/opensearch-dsl-py)
-so you can use all the features developed by the `opensearch-dsl` team.
+wrapper around [`opensearch-py`](https://github.com/opensearch-project/opensearch-py)
+so you can use all the features developed by the `opensearch-py` team.
 
 You can view the full documentation
 at [https://django-opensearch-dsl.readthedocs.io](https://django-opensearch-dsl.readthedocs.io/en/latest/).
 
 ## Features
 
-- Based on [`opensearch-dsl-py`](https://github.com/opensearch-project/opensearch-dsl-py) so you can make queries with
+- Based on [`opensearch-py`](https://github.com/opensearch-project/opensearch-py) so you can make queries with
   the [`Search`](https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#the-search-object)
   object.
 - Management commands for creating, deleting, and populating indices and documents.
@@ -33,7 +33,7 @@ at [https://django-opensearch-dsl.readthedocs.io](https://django-opensearch-dsl.
 
 * `Python>=3.7`
 * `django>=3.2`
-* `opensearch-dsl>=1.0.0, <3.0.0`
+* `opensearch-py>=1.0.0, <3.0.0`
 * `python-dateutil~=2.8.2`
 
 ## Installation and Configuration

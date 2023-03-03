@@ -24,7 +24,7 @@ to [`opensearchpy.connection.connections.configure()`](http://elasticsearch-dsl.
 
 Default: `{}`
 
-Additional options passed to the `opensearch-dsl` Index settings (like `number_of_replicas` or `number_of_shards`).
+Additional options passed to the `opensearch-py` Index settings (like `number_of_replicas` or `number_of_shards`).
 See [Opensearch's index settings](https://opensearch.org/docs/latest/opensearch/rest-api/index-apis/create-index/#index-settings)
 for more information.
 
