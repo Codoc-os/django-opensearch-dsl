@@ -153,9 +153,7 @@ class Command(BaseCommand):
                     exit(1)
             except opensearchpy.exceptions.RequestError:
                 if verbosity or not ignore_error:
-                    self.stderr.write(
-                        f"{pp} index '{index._name}'... {self.style.ERROR('Error')}"
-                    )  # noqa
+                    self.stderr.write(f"{pp} index '{index._name}'... {self.style.ERROR('Error')}")  # noqa
                 if not ignore_error:
                     self.stderr.write("exiting...")
                     exit(1)
@@ -164,7 +162,19 @@ class Command(BaseCommand):
                     self.stdout.write(f"{pp} index '{index_name}'... {self.style.SUCCESS('OK')}")  # noqa
 
     def _manage_document(
-        self, action, indices, index_suffix, force, filters, excludes, verbosity, parallel, count, refresh, missing, **options
+        self,
+        action,
+        indices,
+        index_suffix,
+        force,
+        filters,
+        excludes,
+        verbosity,
+        parallel,
+        count,
+        refresh,
+        missing,
+        **options,
     ):  # noqa
         """Manage the creation and deletion of indices."""
         action = OpensearchAction(action)
@@ -244,9 +254,7 @@ class Command(BaseCommand):
             else:
                 qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
                 success, errors = document.update(
-                    qs, action,
-                    parallel=parallel, index_suffix=index_suffix,
-                    refresh=refresh, raise_on_error=False
+                    qs, action, parallel=parallel, index_suffix=index_suffix, refresh=refresh, raise_on_error=False
                 )
 
                 success_str = self.style.SUCCESS(success) if success else success
@@ -296,7 +304,12 @@ class Command(BaseCommand):
                 OpensearchAction.DELETE.value,
             ],
         )
-        subparser.add_argument("--suffix", type=str, default=None, help="A suffix for the index name to create/delete (if you don't provide one, a timestamp will be used for creation).")
+        subparser.add_argument(
+            "--suffix",
+            type=str,
+            default=None,
+            help="A suffix for the index name to create/delete (if you don't provide one, a timestamp will be used for creation).",
+        )
         subparser.add_argument("--force", action="store_true", default=False, help="Do not ask for confirmation.")
         subparser.add_argument("--ignore-error", action="store_true", default=False, help="Do not stop on error.")
         subparser.add_argument(
@@ -356,7 +369,12 @@ class Command(BaseCommand):
             ),
         )
         subparser.add_argument("--force", action="store_true", default=False, help="Do not ask for confirmation.")
-        subparser.add_argument("--index-suffix", type=str, default=None, help="The suffix for the index name (if you don't provide one, the current index will be used). Required for `migrate` subcommand.")
+        subparser.add_argument(
+            "--index-suffix",
+            type=str,
+            default=None,
+            help="The suffix for the index name (if you don't provide one, the current index will be used). Required for `migrate` subcommand.",
+        )
         subparser.add_argument(
             "-i", "--indices", type=str, nargs="*", help="Only update documents on the given indices."
         )

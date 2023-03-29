@@ -20,7 +20,7 @@ class DocumentTestCase(TestCase):
         cls.call_command = functools.partial(call_command, stdout=devnull, stderr=devnull)
 
     def setUp(self) -> None:
-        get_connection().indices.delete('_all')
+        get_connection().indices.delete("_all")
 
     def test_unknown_index(self):
         with self.assertRaises(SystemExit):

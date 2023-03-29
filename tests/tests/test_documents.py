@@ -114,12 +114,12 @@ class DocumentTestCase(TestCase):
         self.assertFalse(CarDocument._index.exists())
 
         # WHEN init() with explicit suffix
-        CarDocument.init(suffix='v1')
+        CarDocument.init(suffix="v1")
 
         # THEN an index has been created with the given name
         # and an alias to the abstract Document index name
         self.assertTrue(CarDocument._index.exists())
-        self.assertEqual(set(CarDocument._index.get_alias().keys()), {'car_index--v1'})
+        self.assertEqual(set(CarDocument._index.get_alias().keys()), {"car_index--v1"})
 
     def test_get_all_indices(self):
         # GIVEN no existing index for the Document
@@ -128,29 +128,26 @@ class DocumentTestCase(TestCase):
         self.assertEqual(CarDocument.get_all_indices(), [])
 
         # WHEN creating 2 named indices
-        CarDocument.init(suffix='v1')
-        CarDocument.init(suffix='v2')
+        CarDocument.init(suffix="v1")
+        CarDocument.init(suffix="v2")
 
         # THEN 2 indices have been created and get_all_indices() shows them
         self.assertTrue(CarDocument._index.exists())
-        self.assertEqual(
-            [i._name for i in CarDocument.get_all_indices()],
-            ['car_index--v1', 'car_index--v2']
-        )
+        self.assertEqual([i._name for i in CarDocument.get_all_indices()], ["car_index--v1", "car_index--v2"])
 
     def test_migrate(self):
         # GIVEN 2 existing indices for the Document
-        CarDocument.init(suffix='v1')
-        CarDocument.init(suffix='v2')
+        CarDocument.init(suffix="v1")
+        CarDocument.init(suffix="v2")
         self.assertEqual(len(CarDocument.get_all_indices()), 2)
         # First ensure that the alias points to the first version
-        self.assertEqual(set(CarDocument._index.get_alias().keys()), {'car_index--v1'})
+        self.assertEqual(set(CarDocument._index.get_alias().keys()), {"car_index--v1"})
 
         # WHEN migrating to v2
-        CarDocument.migrate('v2')
+        CarDocument.migrate("v2")
 
         # THEN the alias is now pointing to v2
-        self.assertEqual(set(CarDocument._index.get_alias().keys()), {'car_index--v2'})
+        self.assertEqual(set(CarDocument._index.get_alias().keys()), {"car_index--v2"})
 
     def test_queryset_pagination_added(self):
         @registry.register_document

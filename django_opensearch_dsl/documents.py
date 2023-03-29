@@ -60,7 +60,7 @@ class IndexMeta(DSLIndexMeta):
 class Document(DSLDocument, metaclass=IndexMeta):
     """Allow the definition of Opensearch' index using Django `Model`."""
 
-    VERSION_NAME_SEPARATOR = '--'
+    VERSION_NAME_SEPARATOR = "--"
     _prepared_fields = []
 
     def __init__(self, related_instance_to_ignore=None, **kwargs):
@@ -75,7 +75,7 @@ class Document(DSLDocument, metaclass=IndexMeta):
         """Compute the concrete Index name for the given (or not) suffix."""
         name = cls._index._name  # noqa
         if suffix:
-            name += f'{cls.VERSION_NAME_SEPARATOR}{suffix}'
+            name += f"{cls.VERSION_NAME_SEPARATOR}{suffix}"
         return name
 
     @classmethod
@@ -84,9 +84,7 @@ class Document(DSLDocument, metaclass=IndexMeta):
         return [
             Index(name)
             for name in sorted(
-                cls._get_connection(using=using).indices.get(
-                    f"{cls._index._name}{cls.VERSION_NAME_SEPARATOR}*"
-                ).keys()
+                cls._get_connection(using=using).indices.get(f"{cls._index._name}{cls.VERSION_NAME_SEPARATOR}*").keys()
             )
         ]
 
@@ -116,9 +114,7 @@ class Document(DSLDocument, metaclass=IndexMeta):
         if len(actions_on_aliases) == 1 and cls._index.exists():
             cls._index.delete()
 
-        cls._get_connection(using=using).indices.update_aliases(
-            body={"actions": actions_on_aliases}
-        )
+        cls._get_connection(using=using).indices.update_aliases(body={"actions": actions_on_aliases})
 
     @classmethod
     def init(cls, suffix=None, using=None):
@@ -311,4 +307,6 @@ class Document(DSLDocument, metaclass=IndexMeta):
         else:
             object_list = thing
 
-        return self._bulk(self._get_actions(object_list, action, index_name=index_name), *args, refresh=refresh, using=using, **kwargs)
+        return self._bulk(
+            self._get_actions(object_list, action, index_name=index_name), *args, refresh=refresh, using=using, **kwargs
+        )

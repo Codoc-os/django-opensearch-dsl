@@ -10,7 +10,7 @@ class DocumentTestCase(TestCase):
     fixtures = ["tests/django_dummy_app/geography_data.json"]
 
     def setUp(self) -> None:
-        get_connection().indices.delete('_all')
+        get_connection().indices.delete("_all")
 
     def test_search_country(self):
         CountryDocument.init()
