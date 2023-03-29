@@ -5,6 +5,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from collections import defaultdict
+from datetime import datetime
 from typing import Any, Callable
 
 import opensearchpy
@@ -17,6 +18,7 @@ from django.db.models import Q
 from django_opensearch_dsl.registries import registry
 from ..enums import OpensearchAction
 from ..types import parse
+from ...documents import Document
 
 
 class Command(BaseCommand):
@@ -54,19 +56,40 @@ class Command(BaseCommand):
         indices = registry.get_indices()
         result = defaultdict(list)
         for index in indices:
-            module = index._doc_types[0].__module__.split(".")[-2]  # noqa
+            document = index._doc_types[0]
+            module = document.__module__.split(".")[-2]  # noqa
             exists = index.exists()
             checkbox = f"[{'X' if exists else ' '}]"
-            count = f" ({index.search().count()} documents)" if exists else ""
-            result[module].append(f"{checkbox} {index._name}{count}")
+            document_indices = document.get_all_indices()
+            if document_indices:
+                details = ". Following indices exist:"
+                for document_index in document_indices:
+                    is_active = ""
+                    if document_index.exists_alias(name=index._name):
+                        is_active = self.style.SUCCESS("Active")
+                    count = f" ({document_index.search().count()} documents)"
+                    details += f"\n    - {document_index._name} {is_active}{count}"
+            elif exists:
+                details = f" ({index.search().count()} documents)"
+            else:
+                details = ""
+            result[module].append(f"{checkbox} {index._name}{details}")
         for app, indices in result.items():
             self.stdout.write(self.style.MIGRATE_LABEL(app))
             self.stdout.write("\n".join(indices))
 
-    def _manage_index(self, action, indices, force, verbosity, ignore_error, **options):  # noqa
+    def _manage_index(self, action, indices, suffix, force, verbosity, ignore_error, **options):  # noqa
         """Manage the creation and deletion of indices."""
         action = OpensearchAction(action)
-        known = registry.get_indices()
+
+        suffix = suffix or datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+        if action == OpensearchAction.CREATE:
+            known = registry.get_indices()
+        else:
+            known = []
+            for document in [i._doc_types[0] for i in registry.get_indices()]:
+                known.extend(document.get_all_indices())
 
         # Filter indices
         if indices:
@@ -84,9 +107,15 @@ class Command(BaseCommand):
 
         # Display expected action
         if verbosity or not force:
+            if not indices:
+                self.stdout.write("Nothing to do, exiting")
+                exit(0)
             self.stdout.write(f"The following indices will be {action.past}:")
             for index in indices:
-                self.stdout.write(f"\t- {index._name}.")  # noqa
+                index_name = index._name  # noqa
+                if action == OpensearchAction.CREATE:
+                    index_name += f"{Document.VERSION_NAME_SEPARATOR}{suffix}"
+                self.stdout.write(f"\t- {index_name}.")  # noqa
             self.stdout.write("")
 
         # Ask for confirmation to continue
@@ -101,23 +130,21 @@ class Command(BaseCommand):
 
         pp = action.present_participle.title()
         for index in indices:
+            index_name = index._name  # noqa
+            if action == OpensearchAction.CREATE:
+                index_name += f"{Document.VERSION_NAME_SEPARATOR}{suffix}"
+
             if verbosity:
                 self.stdout.write(
-                    f"{pp} index '{index._name}'...\r",
+                    f"{pp} index '{index_name}'...\r",
                     ending="",
                 )  # noqa
                 self.stdout.flush()
             try:
                 if action == OpensearchAction.CREATE:
-                    index.create()
+                    index._doc_types[0].init(suffix=suffix)
                 elif action == OpensearchAction.DELETE:
                     index.delete()
-                else:
-                    try:
-                        index.delete()
-                    except opensearchpy.exceptions.NotFoundError:
-                        pass
-                    index.create()
             except opensearchpy.exceptions.NotFoundError:
                 if verbosity or not ignore_error:
                     self.stderr.write(f"{pp} index '{index._name}'...{self.style.ERROR('Error (not found)')}")  # noqa
@@ -127,17 +154,17 @@ class Command(BaseCommand):
             except opensearchpy.exceptions.RequestError:
                 if verbosity or not ignore_error:
                     self.stderr.write(
-                        f"{pp} index '{index._name}'... {self.style.ERROR('Error (already exists)')}"
+                        f"{pp} index '{index._name}'... {self.style.ERROR('Error')}"
                     )  # noqa
                 if not ignore_error:
                     self.stderr.write("exiting...")
                     exit(1)
             else:
                 if verbosity:
-                    self.stdout.write(f"{pp} index '{index._name}'... {self.style.SUCCESS('OK')}")  # noqa
+                    self.stdout.write(f"{pp} index '{index_name}'... {self.style.SUCCESS('OK')}")  # noqa
 
     def _manage_document(
-        self, action, indices, force, filters, excludes, verbosity, parallel, count, refresh, missing, **options
+        self, action, indices, index_suffix, force, filters, excludes, verbosity, parallel, count, refresh, missing, **options
     ):  # noqa
         """Manage the creation and deletion of indices."""
         action = OpensearchAction(action)
@@ -206,7 +233,9 @@ class Command(BaseCommand):
             document = index._doc_types[0]()  # noqa
             qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
             success, errors = document.update(
-                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
+                qs, action,
+                parallel=parallel, index_suffix=index_suffix,
+                refresh=refresh, raise_on_error=False
             )
 
             success_str = self.style.SUCCESS(success) if success else success
@@ -241,23 +270,23 @@ class Command(BaseCommand):
         )
         subparser.set_defaults(func=self.__list_index)
 
-        # 'manage' subcommand
+        # 'index' subcommand
         subparser = subparsers.add_parser(
             "index",
-            help="Manage the creation an deletion of indices.",
-            description="Manage the creation an deletion of indices.",
+            help="Manage the deletion of indices.",
+            description="Manage the deletion of indices.",
         )
         subparser.set_defaults(func=self._manage_index)
         subparser.add_argument(
             "action",
             type=str,
-            help="Whether you want to create, delete or rebuild the indices.",
+            help="Whether you want to create or delete the indices.",
             choices=[
                 OpensearchAction.CREATE.value,
                 OpensearchAction.DELETE.value,
-                OpensearchAction.REBUILD.value,
             ],
         )
+        subparser.add_argument("--suffix", type=str, default=None, help="A suffix for the index name to create/delete (if you don't provide one, a timestamp will be used for creation).")
         subparser.add_argument("--force", action="store_true", default=False, help="Do not ask for confirmation.")
         subparser.add_argument("--ignore-error", action="store_true", default=False, help="Do not stop on error.")
         subparser.add_argument(
@@ -279,7 +308,7 @@ class Command(BaseCommand):
         subparser.add_argument(
             "action",
             type=str,
-            help="Whether you want to create, delete or rebuild the indices.",
+            help="Whether you want to index, delete or update documents in indices.",
             choices=[
                 OpensearchAction.INDEX.value,
                 OpensearchAction.DELETE.value,
@@ -316,6 +345,7 @@ class Command(BaseCommand):
             ),
         )
         subparser.add_argument("--force", action="store_true", default=False, help="Do not ask for confirmation.")
+        subparser.add_argument("--index-suffix", type=str, default=None, help="The suffix for the index name (if you don't provide one, the current index will be used).")
         subparser.add_argument(
             "-i", "--indices", type=str, nargs="*", help="Only update documents on the given indices."
         )
