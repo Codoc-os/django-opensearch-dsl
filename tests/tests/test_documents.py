@@ -4,7 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.test import TestCase, override_settings
 from django.utils.translation import gettext_lazy as _
-from opensearchpy.helpers.field import GeoPoint, InnerDoc
+from opensearchpy.helpers.field import GeoPoint
+from opensearchpy.helpers.document import InnerDoc
 from opensearchpy import OpenSearch
 
 from django_opensearch_dsl import fields
