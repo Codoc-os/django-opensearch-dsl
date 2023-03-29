@@ -7,6 +7,7 @@ class OpensearchAction(str, Enum):
     INDEX = ("index", "indexing", "indexed")
     UPDATE = ("update", "updating", "updated")
     CREATE = ("create", "creating", "created")
+    MIGRATE = ("migrate", "migrating", "migrated")
     LIST = ("list", "listing", "listed")
     DELETE = ("delete", "deleting", "deleted")
 

@@ -212,7 +212,11 @@ class Command(BaseCommand):
                 self.stderr.write(f"Error while filtering on '{model}' (from index '{index._name}'):\n{e}'")  # noqa
                 exit(1)
             else:
-                s += f"\n\t- {qs} {document.django.model.__name__}."
+                if action == OpensearchAction.MIGRATE:
+                    prefix = ""
+                else:
+                    prefix = f" {qs}"
+                s += f"\n\t- {prefix} {document.django.model.__name__}."
 
         # Display expected actions
         if verbosity or not force:
@@ -231,28 +235,34 @@ class Command(BaseCommand):
         result = "\n"
         for index, kwargs in zip(indices, kwargs_list):
             document = index._doc_types[0]()  # noqa
-            qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
-            success, errors = document.update(
-                qs, action,
-                parallel=parallel, index_suffix=index_suffix,
-                refresh=refresh, raise_on_error=False
-            )
-
-            success_str = self.style.SUCCESS(success) if success else success
-            errors_str = self.style.ERROR(len(errors)) if errors else len(errors)
             model = document.django.model.__name__
 
-            if verbosity == 1:
-                result += f"{success_str} {model} successfully {action.past}, {errors_str} errors:\n"
-                reasons = defaultdict(int)
-                for e in errors:  # Count occurrence of each error
-                    error = e.get(action, {"result": "unknown error"}).get("result", "unknown error")
-                    reasons[error] += 1
-                for reasons, total in reasons.items():
-                    result += f"    - {reasons} : {total}\n"
+            if action == OpensearchAction.MIGRATE:
+                document.migrate(index_suffix)
+                if verbosity >= 1:
+                    result += f"{model} successfully migrated to index {document.get_index_name(suffix=index_suffix)}\n"
+            else:
+                qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
+                success, errors = document.update(
+                    qs, action,
+                    parallel=parallel, index_suffix=index_suffix,
+                    refresh=refresh, raise_on_error=False
+                )
 
-            if verbosity > 1:
-                result += f"{success_str} {model} successfully {action}d, {errors_str} errors:\n {errors}\n"
+                success_str = self.style.SUCCESS(success) if success else success
+                errors_str = self.style.ERROR(len(errors)) if errors else len(errors)
+
+                if verbosity == 1:
+                    result += f"{success_str} {model} successfully {action.past}, {errors_str} errors:\n"
+                    reasons = defaultdict(int)
+                    for e in errors:  # Count occurrence of each error
+                        error = e.get(action, {"result": "unknown error"}).get("result", "unknown error")
+                        reasons[error] += 1
+                    for reasons, total in reasons.items():
+                        result += f"    - {reasons} : {total}\n"
+
+                if verbosity > 1:
+                    result += f"{success_str} {model} successfully {action}d, {errors_str} errors:\n {errors}\n"
 
         if verbosity:
             self.stdout.write(result + "\n")
@@ -308,11 +318,12 @@ class Command(BaseCommand):
         subparser.add_argument(
             "action",
             type=str,
-            help="Whether you want to index, delete or update documents in indices.",
+            help="Whether you want to index, delete or update documents in indices. Or migrate from an index to another.",
             choices=[
                 OpensearchAction.INDEX.value,
                 OpensearchAction.DELETE.value,
                 OpensearchAction.UPDATE.value,
+                OpensearchAction.MIGRATE.value,
             ],
         )
         subparser.add_argument(
@@ -345,7 +356,7 @@ class Command(BaseCommand):
             ),
         )
         subparser.add_argument("--force", action="store_true", default=False, help="Do not ask for confirmation.")
-        subparser.add_argument("--index-suffix", type=str, default=None, help="The suffix for the index name (if you don't provide one, the current index will be used).")
+        subparser.add_argument("--index-suffix", type=str, default=None, help="The suffix for the index name (if you don't provide one, the current index will be used). Required for `migrate` subcommand.")
         subparser.add_argument(
             "-i", "--indices", type=str, nargs="*", help="Only update documents on the given indices."
         )

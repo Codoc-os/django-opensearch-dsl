@@ -232,3 +232,11 @@ class DocumentTestCase(TestCase):
         self.assertEqual(ContinentDocument.search().count(), 3)
         self.assertEqual(CountryDocument.search().count(), 3)
         self.assertEqual(EventDocument.search().count(), 3)
+
+    def test_migrate(self):
+        self.call_command("opensearch", "index", "create", suffix="v1", force=True)
+        self.call_command("opensearch", "index", "create", suffix="v2", force=True)
+        self.assertEqual(CountryDocument.get_active_index()._name, "country--v1")
+
+        self.call_command("opensearch", "document", "migrate", index_suffix="v2", force=True)
+        self.assertEqual(CountryDocument.get_active_index()._name, "country--v2")
