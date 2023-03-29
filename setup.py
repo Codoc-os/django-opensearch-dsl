@@ -27,7 +27,7 @@ LONG_DESCRIPTION = (
     + codecs.open(os.path.join(DIRNAME, 'docs/CHANGELOG.md'), encoding='utf-8').read()
 )
 REQUIREMENTS = [
-    'opensearch-py>=1.0.0, <3.0.0',
+    'opensearch-py>=2.2.0',
     'dateutils'
 ]
 
