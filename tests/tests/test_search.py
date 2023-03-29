@@ -1,21 +1,19 @@
 from django.test import TestCase
 from opensearch_dsl import Q
+from opensearch_dsl.connections import get_connection
 
 from django_dummy_app.documents import CountryDocument, ContinentDocument
 from django_dummy_app.models import Country, Continent
-from django_opensearch_dsl.registries import registry
 
 
 class DocumentTestCase(TestCase):
     fixtures = ["tests/django_dummy_app/geography_data.json"]
 
     def setUp(self) -> None:
-        indices = registry.get_indices()
-        for i in indices:
-            i.delete(ignore_unavailable=True)
+        get_connection().indices.delete('_all')
 
     def test_search_country(self):
-        CountryDocument._index.create()
+        CountryDocument.init()
 
         CountryDocument().update(CountryDocument().get_indexing_queryset(), "index", refresh=True)
         self.assertEqual(
@@ -24,7 +22,7 @@ class DocumentTestCase(TestCase):
         )
 
     def test_search_country_cache(self):
-        CountryDocument._index.create()
+        CountryDocument.init()
 
         CountryDocument().update(CountryDocument().get_indexing_queryset(), "index", refresh=True)
         search = CountryDocument.search().query("term", **{"continent.name": "Europe"}).extra(size=300)
@@ -34,7 +32,7 @@ class DocumentTestCase(TestCase):
         )
 
     def test_search_country_keep_order(self):
-        CountryDocument._index.create()
+        CountryDocument.init()
 
         CountryDocument().update(CountryDocument().get_indexing_queryset(), "index", refresh=True)
         search = CountryDocument.search().query("term", **{"continent.name": "Europe"}).extra(size=300)
@@ -43,7 +41,7 @@ class DocumentTestCase(TestCase):
         )
 
     def test_search_country_refresh_default_to_document(self):
-        CountryDocument._index.create()
+        CountryDocument.init()
 
         CountryDocument().update(CountryDocument().get_indexing_queryset(), "index", refresh=True)
         self.assertEqual(
@@ -52,7 +50,7 @@ class DocumentTestCase(TestCase):
         )
 
     def test_search_country_refresh_default_to_settings(self):
-        ContinentDocument._index.create()
+        ContinentDocument.init()
 
         ContinentDocument().update(ContinentDocument().get_indexing_queryset(), "index", refresh=True)
         search = ContinentDocument.search().query(
@@ -61,7 +59,7 @@ class DocumentTestCase(TestCase):
         self.assertEqual(set(search.to_queryset()), set(Continent.objects.filter(countries__name="France")))
 
     def test_update_instance(self):
-        ContinentDocument._index.create()
+        ContinentDocument.init()
 
         ContinentDocument().update(Continent.objects.get(countries__name="France"), "index", refresh=True)
         search = ContinentDocument.search().query(

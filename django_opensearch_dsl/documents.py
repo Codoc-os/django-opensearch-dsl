@@ -2,6 +2,7 @@ import io
 import sys
 import time
 from collections import deque
+from datetime import datetime
 from functools import partial
 from typing import Optional, Iterable
 
@@ -59,6 +60,7 @@ class IndexMeta(DSLIndexMeta):
 class Document(DSLDocument, metaclass=IndexMeta):
     """Allow the definition of Opensearch' index using Django `Model`."""
 
+    VERSION_NAME_SEPARATOR = '--'
     _prepared_fields = []
 
     def __init__(self, related_instance_to_ignore=None, **kwargs):
@@ -67,6 +69,68 @@ class Document(DSLDocument, metaclass=IndexMeta):
         # from related models on deletion.
         self._related_instance_to_ignore = related_instance_to_ignore
         self._prepared_fields = self.init_prepare()
+
+    @classmethod
+    def get_index_name(cls, suffix=None):
+        """Compute the concrete Index name for the given (or not) suffix."""
+        name = cls._index._name  # noqa
+        if suffix:
+            name += f'{cls.VERSION_NAME_SEPARATOR}{suffix}'
+        return name
+
+    @classmethod
+    def get_all_indices(cls, using=None):
+        """Fetches from OpenSearch all concrete indices for this Document."""
+        return [
+            Index(name)
+            for name in sorted(
+                cls._get_connection(using=using).indices.get(
+                    f"{cls._index._name}{cls.VERSION_NAME_SEPARATOR}*"
+                ).keys()
+            )
+        ]
+
+    @classmethod
+    def get_active_index(cls, using=None):
+        """Return the Index that's active for this Document."""
+        for index in cls.get_all_indices(using=using):
+            if index.exists_alias(name=cls._index._name):  # noqa
+                return index
+
+    @classmethod
+    def migrate(cls, suffix, using=None):
+        """Sets an alias of the Document Index name to a given concrete Index."""
+        index_name = cls.get_index_name(suffix)
+
+        actions_on_aliases = [
+            {"add": {"index": index_name, "alias": cls._index._name}},  # noqa
+        ]
+
+        active_index = cls.get_active_index()
+        if active_index:
+            actions_on_aliases.insert(
+                0,
+                {"remove": {"index": active_index._name, "alias": cls._index._name}},  # noqa
+            )
+
+        if len(actions_on_aliases) == 1 and cls._index.exists():
+            cls._index.delete()
+
+        cls._get_connection(using=using).indices.update_aliases(
+            body={"actions": actions_on_aliases}
+        )
+
+    @classmethod
+    def init(cls, suffix=None, using=None):
+        """Init the Index with a named suffix to handle multiple versions.
+
+        Create an alias to the default index name if it doesn't exist.
+        """
+        suffix = suffix or datetime.now().strftime("%Y%m%d%H%M%S%f")
+        index_name = cls.get_index_name(suffix)
+        super().init(index=index_name, using=using)
+        if not cls._index.exists():
+            cls.migrate(suffix, using=using)
 
     @classmethod
     def search(cls, using=None, index=None):
@@ -208,18 +272,18 @@ class Document(DSLDocument, metaclass=IndexMeta):
         """
         return object_instance.pk
 
-    def _prepare_action(self, object_instance, action):
+    def _prepare_action(self, object_instance, action, index_name=None):
         return {
             "_op_type": action,
-            "_index": self._index._name,  # noqa
+            "_index": index_name or self._index._name,  # noqa
             "_id": self.generate_id(object_instance),
             "_source" if action != "update" else "doc": (self.prepare(object_instance) if action != "delete" else None),
         }
 
-    def _get_actions(self, object_list, action):
+    def _get_actions(self, object_list, action, **kwargs):
         for object_instance in object_list:
             if action == "delete" or self.should_index_object(object_instance):
-                yield self._prepare_action(object_instance, action)
+                yield self._prepare_action(object_instance, action, **kwargs)
 
     def _bulk(self, *args, parallel=False, using=None, **kwargs):
         """Helper for switching between normal and parallel bulk operation."""
@@ -235,14 +299,16 @@ class Document(DSLDocument, metaclass=IndexMeta):
         """
         return True
 
-    def update(self, thing, action, *args, refresh=None, using=None, **kwargs):  # noqa
+    def update(self, thing, action, *args, index_suffix=None, refresh=None, using=None, **kwargs):  # noqa
         """Update document in OS for a model, iterable of models or queryset."""
         if refresh is None:
             refresh = getattr(self.Index, "auto_refresh", DODConfig.auto_refresh_enabled())
+
+        index_name = self.__class__.get_index_name(index_suffix) if index_suffix else None
 
         if isinstance(thing, models.Model):
             object_list = [thing]
         else:
             object_list = thing
 
-        return self._bulk(self._get_actions(object_list, action), *args, refresh=refresh, using=using, **kwargs)
+        return self._bulk(self._get_actions(object_list, action, index_name=index_name), *args, refresh=refresh, using=using, **kwargs)
