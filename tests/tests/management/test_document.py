@@ -3,11 +3,11 @@ import os
 import time
 
 from django.test import TestCase
+from opensearch_dsl.connections import get_connection
 
 from django_dummy_app.commands import call_command
 from django_dummy_app.documents import CountryDocument, ContinentDocument, EventDocument
 from django_dummy_app.models import Country, Event, Continent
-from django_opensearch_dsl.registries import registry
 
 
 class DocumentTestCase(TestCase):
@@ -20,9 +20,7 @@ class DocumentTestCase(TestCase):
         cls.call_command = functools.partial(call_command, stdout=devnull, stderr=devnull)
 
     def setUp(self) -> None:
-        indices = registry.get_indices()
-        for i in indices:
-            i.delete(ignore_unavailable=True)
+        get_connection().indices.delete("_all")
 
     def test_unknown_index(self):
         with self.assertRaises(SystemExit):
@@ -234,3 +232,11 @@ class DocumentTestCase(TestCase):
         self.assertEqual(ContinentDocument.search().count(), 3)
         self.assertEqual(CountryDocument.search().count(), 3)
         self.assertEqual(EventDocument.search().count(), 3)
+
+    def test_migrate(self):
+        self.call_command("opensearch", "index", "create", suffix="v1", force=True)
+        self.call_command("opensearch", "index", "create", suffix="v2", force=True)
+        self.assertEqual(CountryDocument.get_active_index()._name, "country--v1")
+
+        self.call_command("opensearch", "document", "migrate", index_suffix="v2", force=True)
+        self.assertEqual(CountryDocument.get_active_index()._name, "country--v2")

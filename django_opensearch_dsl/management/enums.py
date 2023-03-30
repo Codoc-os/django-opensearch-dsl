@@ -7,10 +7,9 @@ class OpensearchAction(str, Enum):
     INDEX = ("index", "indexing", "indexed")
     UPDATE = ("update", "updating", "updated")
     CREATE = ("create", "creating", "created")
-    REBUILD = ("rebuild", "rebuilding", "rebuilded")
+    MIGRATE = ("migrate", "migrating", "migrated")
     LIST = ("list", "listing", "listed")
     DELETE = ("delete", "deleting", "deleted")
-    MANAGE = ("manage", "managing", "managed")
 
     def __new__(cls, value: str, present_participle: str, past: str):  # noqa: D102
         obj = str.__new__(cls, value)
