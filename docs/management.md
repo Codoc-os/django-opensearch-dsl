@@ -44,20 +44,22 @@ Indices and documents can be managed through the `opensearch` management command
 ### Summary
 
 ```text
-usage: manage.py opensearch index [-h] [--force] [--ignore-error]
-                                  {create,delete,rebuild} [INDEX [INDEX ...]]
+usage: manage.py opensearch index [-h] [--suffix SUFFIX] [--force]
+                                  [--ignore-error]
+                                  {create,delete} [INDEX [INDEX ...]]
 
-Manage the creation and deletion of indices.
+Manage the deletion of indices.
 
 positional arguments:
-  {create,delete,rebuild}
-                        Whether you want to create, delete or rebuild the indices.
-  INDEX                 Only manage the given indices.
+  {create,delete}  Whether you want to create or delete the indices.
+  INDEX            Only manage the given indices.
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --force               Do not ask for confirmation.
-  --ignore-error        Do not stop on error.
+  -h, --help       show this help message and exit
+  --suffix SUFFIX  A suffix for the index name to create/delete (if you don't
+                   provide one, a timestamp will be used for creation).
+  --force          Do not ask for confirmation.
+  --ignore-error   Do not stop on error.
 ```
 
 ### Description
@@ -66,7 +68,6 @@ This command takes a mandatory positional argument:
 
 * `create` - Create the indices.
 * `delete` - Delete the indices.
-* `rebuild` - Rebuild (delete then create) the indices.
 
 The command can also take any number of optional positional arguments which are the names of the indices that should be
 created/deleted. If no index is provided, the action is applied to all indices.
@@ -83,8 +84,11 @@ Sample output :
 
 ```text
 django_dummy_app
-[X] country (0 documents)
-[ ] continent
+[X] country. Following indices exist:
+    - country--20220813172923248055 Active (0 documents)
+    - country--20220813172923212345 (0 documents)
+[ ] continent. Following indices exist:
+    - continent--20220813172923248055 (0 documents)
 [X] event (2361 documents)
 ```
 
@@ -95,41 +99,40 @@ django_dummy_app
 ```text
 usage: manage.py opensearch document [-h] [-f [FILTERS [FILTERS ...]]]
                                      [-e [EXCLUDES [EXCLUDES ...]]] [--force]
+                                     [--index-suffix INDEX_SUFFIX]
                                      [-i [INDICES [INDICES ...]]] [-c COUNT]
-                                     [-p] [-r] [-m] {index,delete,update}
+                                     [-p] [-r] [-m]
+                                     {index,delete,update,migrate}
 
 Manage the indexation and creation of documents.
 
 positional arguments:
-  {index,delete,update}
-                        Whether you want to create, delete or rebuild the indices.
+  {index,delete,update,migrate}
+                        Whether you want to index, delete or update documents in indices. Or migrate from an index to another.
 
 optional arguments:
   -h, --help            show this help message and exit
   -f [FILTERS [FILTERS ...]], --filters [FILTERS [FILTERS ...]]
-                        Filter object in the queryset. Argument must be formatted as 
-                        '[lookup]=[value]', e.g. 'document_date__gte=2020-05-21. The accepted
-                        value type are:
-                            - 'None' ('[lookup]=')
-                            - 'float' ('[lookup]=1.12')
-                            - 'int' ('[lookup]=23')
-                            - 'datetime.date' ('[lookup]=2020-10-08')
-                            - 'list' ('[lookup]=1,2,3,4') Value between comma ',' can be of any
-                              other accepted value type
-                            - 'str' ('[lookup]=week')
-                        Values that didn't match any type above will be interpreted as a str.
-                        The list of lookup function can be found here:
-                        https://docs.djangoproject.com/en/dev/ref/models/querysets/#field-lookups
+                        Filter object in the queryset. Argument must be formatted as '[lookup]=[value]', e.g. 'document_date__gte=2020-05-21.
+                        The accepted value type are:
+                          - 'None' ('[lookup]=')
+                          - 'float' ('[lookup]=1.12')
+                          - 'int' ('[lookup]=23')
+                          - 'datetime.date' ('[lookup]=2020-10-08')
+                          - 'list' ('[lookup]=1,2,3,4') Value between comma ',' can be of any other accepted value type
+                          - 'str' ('[lookup]=week') Value that didn't match any type above will be interpreted as a str
+                        The list of lookup function can be found here: https://docs.djangoproject.com/en/dev/ref/models/querysets/#field-lookups
   -e [EXCLUDES [EXCLUDES ...]], --excludes [EXCLUDES [EXCLUDES ...]]
-                        Exclude objects from the queryset. Argument must be formatted as
-                        '[lookup]=[value]', see '--filters' for more information.
+                        Exclude objects from the queryset. Argument must be formatted as '[lookup]=[value]', see '--filters' for more information
   --force               Do not ask for confirmation.
+  --index-suffix INDEX_SUFFIX
+                        The suffix for the index name (if you don't provide one, the current index will be used). Required for `migrate` subcommand.
   -i [INDICES [INDICES ...]], --indices [INDICES [INDICES ...]]
                         Only update documents on the given indices.
   -c COUNT, --count COUNT
                         Update at most COUNT objects (0 to index everything).
   -p, --parallel        Parallelize the communication with Opensearch.
-  -r, --refresh         Make operations performed on the indices immediately available for search.
+  -r, --refresh         Make operations performed on the indices immediatly available for search.
   -m, --missing         When used with 'index' action, only index documents not indexed yet.
 ```
 
@@ -140,6 +143,7 @@ This command allows you to index your model into Opensearch. It takes a required
 * `index` Index the documents, already indexed documents will be reindexed if you do not use the `--missing` option.
 * `delete` Documents will be deleted from the index.
 * `update` Update already indexed documents.
+* `migrate` Migrate from an index to another (by switching index alias)
 
 ***Choosing indices***
 

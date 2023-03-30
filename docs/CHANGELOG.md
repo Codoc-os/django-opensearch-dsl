@@ -1,5 +1,9 @@
 # Changelog
 
+## X.Y.Z (not released yet)
+
+* New feature: zero-downtime document migration
+
 ## 0.5.0 (2022-11-19)
 
 * `get_indexing_queryset()` now order unordered QuerySet by their PK.
