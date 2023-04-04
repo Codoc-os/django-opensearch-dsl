@@ -180,5 +180,9 @@ class DocumentRegistry:
             f"'in <{type(self).__name__}>' requires a Model subclass as left operand, not {type(dict).__name__}"
         )
 
+    def get_indices_raw(self):
+        """Get all indices as they are store in the registry or the indices for a list of models."""
+        return self._indices
+
 
 registry = DocumentRegistry()
