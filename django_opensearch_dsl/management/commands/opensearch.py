@@ -16,6 +16,7 @@ from opensearchpy.connection.connections import connections
 from ...apps import DODConfig
 from ...enums import CommandAction
 from ...registries import registry
+from ...utils import manage_document, manage_index
 from ..types import Values, parse
 
 
@@ -88,76 +89,23 @@ class Command(BaseCommand):
         **options: Any,
     ) -> None:
         """Manage the creation and deletion of indices."""
-        action = CommandAction(action)  # type: ignore[call-arg]
-        known = registry.get_indices()
-
-        # Filter indices
-        if indices:
-            # Ensure every given indices exists
-            known_name = [i._name for i in known]  # noqa
-            unknown = set(indices) - set(known_name)
-            if unknown:
-                self.stderr.write(f"Unknown indices '{list(unknown)}', choices are: '{known_name}'")
-                raise CommandError
-
-            # Only keep given indices
-            given_indices = [i for i in known if i._name in indices]
-        else:
-            given_indices = list(known)
-
-        # Display expected action
-        if verbosity or not force:
-            self.stdout.write(f"The following indices will be {action.past}:")
-            for index in given_indices:
-                self.stdout.write(f"\t- {index._name}.")  # noqa
-            self.stdout.write("")
-
-        # Ask for confirmation to continue
-        if not force:  # pragma: no cover
-            while True:
-                p = input("Continue ? [y]es [n]o : ")
-                if p.lower() in ["yes", "y"]:
-                    self.stdout.write("")
-                    break
-                elif p.lower() in ["no", "n"]:
-                    raise CommandError
-
-        pp = action.present_participle.title()
-        for index in given_indices:
-            if verbosity:
-                self.stdout.write(
-                    f"{pp} index '{index._name}'...\r",
-                    ending="",
-                )  # noqa
-                self.stdout.flush()
-            try:
-                if action == CommandAction.CREATE:
-                    index.create(using=using)
-                elif action == CommandAction.DELETE:
-                    index.delete(using=using)
-                elif action == CommandAction.UPDATE:
-                    index.put_mapping(using=using, body=index.to_dict()["mappings"])
-                else:
-                    try:
-                        index.delete(using=using)
-                    except opensearchpy.exceptions.NotFoundError:
-                        pass
-                    index.create(using=using)
-            except opensearchpy.exceptions.TransportError as e:
-                if verbosity or not ignore_error:
-                    error = self.style.ERROR(f"Error: {e.error} - {e.info}")
-                    self.stderr.write(f"{pp} index '{index._name}'...\n{error}")  # noqa
-                if not ignore_error:
-                    self.stderr.write("exiting...")
-                    raise CommandError
-            else:
-                if verbosity:
-                    self.stdout.write(f"{pp} index '{index._name}'... {self.style.SUCCESS('OK')}")  # noqa
+        manage_index(
+            action,
+            indices,
+            force,
+            ignore_error,
+            verbosity,
+            stderr=self.stderr,
+            stdout=self.stdout,
+            style=self.style,
+            using=using,
+        )
 
     def _manage_document(
         self,
         action: CommandAction,
         indices: list[str],
+        objects: list[str],
         force: bool,
         filters: list[tuple[str, str]],
         excludes: list[tuple[str, str]],
@@ -168,98 +116,31 @@ class Command(BaseCommand):
         missing: bool,
         using: OpenSearch,
         database: str,
+        batch_size: int,
+        batch_type: str,
         **options: Any,
     ) -> None:
         """Manage the creation and deletion of indices."""
-        action = CommandAction(action)  # type: ignore[call-arg]
-        known = registry.get_indices()
-        filter_ = functools.reduce(operator.and_, (Q(**{k: v}) for k, v in filters)) if filters else None
-        exclude = functools.reduce(operator.and_, (Q(**{k: v}) for k, v in excludes)) if excludes else None
-
-        # Filter indices
-        if indices:
-            # Ensure every given indices exists
-            known_name = [i._name for i in known]  # noqa
-            unknown = set(indices) - set(known_name)
-            if unknown:
-                self.stderr.write(f"Unknown indices '{list(unknown)}', choices are: '{known_name}'")
-                raise CommandError
-
-            # Only keep given indices
-            given_indices = list(filter(lambda i: i._name in indices, known))  # type: ignore[arg-type]
-        else:
-            given_indices = list(known)
-
-        # Ensure every indices needed are created
-        not_created = [i._name for i in given_indices if not i.exists(using=using)]  # noqa
-        if not_created:
-            self.stderr.write(f"The following indices are not created : {not_created}")
-            self.stderr.write("Use 'python3 manage.py opensearch list' to list indices' state.")
-            raise CommandError
-
-        # Check field, preparing to display expected actions
-        s = f"The following documents will be {action.past}:"
-        kwargs_list = []
-        for index in given_indices:
-            # Handle --missing
-            exclude_ = exclude
-            if missing and action == CommandAction.INDEX:
-                q = Q(pk__in=[h.meta.id for h in index.search(using=using).extra(stored_fields=[]).scan()])
-                exclude_ = exclude_ & q if exclude_ is not None else q
-
-            document = index._doc_types[0]()  # noqa
-            try:
-                kwargs_list.append({"filter_": filter_, "exclude": exclude_, "count": count})
-                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count, alias=database).count()
-            except FieldError as e:
-                model = index._doc_types[0].django.model.__name__  # noqa
-                self.stderr.write(f"Error while filtering on '{model}' (from index '{index._name}'):\n{e}'")  # noqa
-                raise CommandError
-            else:
-                s += f"\n\t- {qs} {document.django.model.__name__}."
-
-        # Display expected actions
-        if verbosity or not force:
-            self.stdout.write(s + "\n\n")
-
-        # Ask for confirmation to continue
-        if not force:  # pragma: no cover
-            while True:
-                p = input("Continue ? [y]es [n]o : ")
-                if p.lower() in ["yes", "y"]:
-                    self.stdout.write("\n")
-                    break
-                elif p.lower() in ["no", "n"]:
-                    raise CommandError
-
-        result = "\n"
-        for index, kwargs in zip(given_indices, kwargs_list):
-            document = index._doc_types[0]()  # noqa
-            qs = document.get_indexing_queryset(
-                stdout=self.stdout._out, verbose=verbosity, action=action, alias=database, **kwargs
-            )
-            success, errors = document.update(
-                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False, using=using
-            )
-
-            success_str = self.style.SUCCESS(success) if success else success
-            errors_str = self.style.ERROR(len(errors)) if errors else len(errors)
-            model = document.django.model.__name__
-
-            if verbosity == 1:
-                result += f"{success_str} {model} successfully {action.past}, {errors_str} errors:\n"
-                reasons: defaultdict[str, int] = defaultdict(int)
-                for err in errors:  # Count occurrence of each error
-                    error = err.get(action, {"result": "unknown error"}).get("result", "unknown error")
-                    reasons[error] += 1
-                for reason, total in reasons.items():
-                    result += f"    - {reason} : {total}\n"
-
-            if verbosity > 1:
-                result += f"{success_str} {model} successfully {action}d, {errors_str} errors:\n {errors}\n"
-
-        if verbosity:
-            self.stdout.write(result + "\n")
+        manage_document(
+            action=action,
+            indices=indices,
+            objects=objects,
+            filters=filters,
+            excludes=excludes,
+            force=force,
+            parallel=parallel,
+            count=count,
+            refresh=refresh,
+            missing=missing,
+            using=using,
+            database=database,
+            batch_size=batch_size,
+            batch_type=batch_type,
+            verbosity=verbosity,
+            stderr=self.stderr,
+            stdout=self.stdout,
+            style=self.style,
+        )
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Add arguments to parser."""
@@ -281,7 +162,7 @@ class Command(BaseCommand):
             help="Alias of the OpenSearch connection to use. Default to 'default'.",
         )
 
-        # 'manage' subcommand
+        # 'index' subcommand
         subparser = subparsers.add_parser(
             "index",
             help="Manage the creation an deletion of indices.",
@@ -346,7 +227,13 @@ class Command(BaseCommand):
             default=connection("default"),
             help="Alias of the OpenSearch connection to use. Default to 'default'.",
         )
-        subparser.add_argument("-d", "--database", default=None, dest="database", help="Nominates a database.")
+        subparser.add_argument(
+            "-d",
+            "--database",
+            type=str,
+            default=None,
+            help="Nominates a database to use as source.",
+        )
         subparser.add_argument(
             "-f",
             "--filters",
@@ -380,6 +267,7 @@ class Command(BaseCommand):
         subparser.add_argument(
             "-i", "--indices", type=str, nargs="*", help="Only update documents on the given indices."
         )
+        subparser.add_argument("-o", "--objects", type=str, nargs="*", help="Only update selected objects.")
         subparser.add_argument(
             "-c", "--count", type=int, default=None, help="Update at most COUNT objects (0 to index everything)."
         )
@@ -413,6 +301,20 @@ class Command(BaseCommand):
             action="store_true",
             default=False,
             help="When used with 'index' action, only index documents not indexed yet.",
+        )
+        subparser.add_argument(
+            "-b",
+            "--batch-size",
+            type=int,
+            default=None,
+            help="Specify the batch size for processing documents.",
+        )
+        subparser.add_argument(
+            "-t",
+            "--batch-type",
+            type=str,
+            default="offset",
+            help="Specify the batch type for processing documents (pk_filters | offset).",
         )
 
         self.usage = parser.format_usage()

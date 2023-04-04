@@ -1,3 +1,5 @@
+import copy
+import io
 import sys
 import time
 from collections import deque
@@ -6,7 +8,7 @@ from typing import Any, Callable, Iterable, Optional, TextIO, Union
 
 import opensearchpy
 from django.db import models
-from django.db.models import Q, QuerySet
+from django.db.models import Max, Min, Q, QuerySet
 from opensearchpy.helpers import bulk, parallel_bulk
 from opensearchpy.helpers.document import Document as DSLDocument
 
@@ -101,34 +103,56 @@ class Document(DSLDocument):
         count: int = None,
         action: CommandAction = CommandAction.INDEX,
         stdout: TextIO = sys.stdout,
+        batch_size: int = None,
+        batch_type: str = "offset",
     ) -> Iterable:
         """Divide the queryset into chunks."""
-        chunk_size = self.django.queryset_pagination
+        chunk_size = batch_size or self.django.queryset_pagination
         qs = self.get_queryset(filter_=filter_, exclude=exclude, count=count, alias=alias)
         qs = qs.order_by("pk") if not qs.query.is_sliced else qs
-        total = qs.count()
+        count = qs.count()
         model = self.django.model.__name__
         action = action.present_participle.title()
-
-        i = 0
-        done = 0
         start = time.time()
+        done = 0
         if verbose:
-            stdout.write(f"{action} {model}: 0% ({self._eta(start, done, total)})\r")
-        while done < total:
-            if verbose:
-                stdout.write(f"{action} {model}: {round(i / total * 100)}% ({self._eta(start, done, total)})\r")
+            stdout.write(f"{action} {model}: 0% ({self._eta(start, done, count)})\r")
 
-            for obj in qs[i : i + chunk_size]:
-                done += 1
-                yield obj
+        if count == 0:
+            stdout.write(f"No {model} objects to {action.lower()}.\n")
+            return
 
-            i = min(i + chunk_size, total)
+        if batch_type == "pk_filters":
+            pks = qs.aggregate(min=Min("pk"), max=Max("pk"))
+            total_batches = (pks["max"] - pks["min"]) // chunk_size
+            for batch_number, offset in enumerate(range(pks["min"], pks["max"] + 1, chunk_size), start=1):
+                batch_qs = list(qs.filter(pk__gte=offset, pk__lt=offset + chunk_size))
+                stdout.write(f"Processing batch {batch_number}/{total_batches}: \n")
+                for obj in batch_qs:
+                    done += 1
+                    if done % chunk_size == 0:
+                        stdout.write(
+                            f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r"
+                        )
+                    yield obj
+                if len(batch_qs) > 0:
+                    stdout.write(f"Max primary key in the current {model} batch: {batch_qs[-1].pk}\n")
+        else:
+            total_batches = (count + chunk_size - 1) // chunk_size
+            for batch_number, offset in enumerate(range(0, count, chunk_size), start=1):
+                batch_qs = list(qs[offset : offset + chunk_size].all())
+                stdout.write(f"Processing batch {batch_number}/{total_batches}: \n")
+                for obj in batch_qs:
+                    done += 1
+                    if done % chunk_size == 0:
+                        stdout.write(
+                            f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r"
+                        )
+                    yield obj
+                if len(batch_qs) > 0:
+                    stdout.write(f"Max primary key in the current {model} batch: {batch_qs[-1].pk}\n")
 
-        if verbose:
-            stdout.write(f"{action} {total} {model}: OK          \n")
-
-    def init_prepare(self) -> list[tuple[str, fields.DODField, Callable[[models.Model], Any]]]:
+    def init_prepare(self):
         """Initialise the data model preparers once here.
 
         Extracts the preparers from the model and generate a list of callables
