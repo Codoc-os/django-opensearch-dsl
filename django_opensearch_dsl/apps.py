@@ -2,7 +2,7 @@ from django.apps import AppConfig
 from django.conf import settings
 from django.utils.module_loading import import_string
 
-from opensearch_dsl.connections import connections
+from opensearchpy.connection.connections import connections
 
 
 class DODConfig(AppConfig):

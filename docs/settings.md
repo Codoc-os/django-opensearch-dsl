@@ -17,14 +17,14 @@ OPENSEARCH_DSL = {
 ```
 
 `OPENSEARCH_DSL` is passed
-to [`opensearch_dsl_py.connections.configure()`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
+to [`opensearchpy.connection.connections.configure()`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
 .
 
 ## `OPENSEARCH_DSL_INDEX_SETTINGS`
 
 Default: `{}`
 
-Additional options passed to the `opensearch-dsl` Index settings (like `number_of_replicas` or `number_of_shards`).
+Additional options passed to the `opensearch-py` Index settings (like `number_of_replicas` or `number_of_shards`).
 See [Opensearch's index settings](https://opensearch.org/docs/latest/opensearch/rest-api/index-apis/create-index/#index-settings)
 for more information.
 

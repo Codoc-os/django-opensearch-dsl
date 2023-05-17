@@ -6,7 +6,7 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.encoding import force_str
 from django.utils.functional import Promise
-from opensearch_dsl import field as fields
+from opensearchpy.helpers import field as fields
 
 from .exceptions import VariableLookupError
 

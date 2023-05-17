@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from opensearch_dsl import Index as DSLIndex
+from opensearchpy.helpers.index import Index as DSLIndex
 
 from .apps import DODConfig
 from .registries import registry
