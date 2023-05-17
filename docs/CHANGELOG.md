@@ -1,5 +1,13 @@
 # Changelog
 
+### 0.5.1 (2023-05-18)
+
+* Change references from `opensearch-dsl-py` to `opensearch-py`.  
+  This follow the deprecation notice on the
+  [`opensearch-dsl-py`](https://github.com/opensearch-project/opensearch-dsl-py) project. Its features are now directly
+  included in `opensearch-py`.  
+  ([#33](https://github.com/Codoc-os/django-opensearch-dsl/issues/33), Contributed by [Jacob Kausler](https://github.com/jakekausler)).
+
 ## 0.5.0 (2022-11-19)
 
 * `get_indexing_queryset()` now order unordered QuerySet by their PK.

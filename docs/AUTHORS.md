@@ -8,10 +8,11 @@
 
 * [David Guillot](https://github.com/David-Guillot)
 * [Colin Seifer](https://github.com/Colin-Seifer)
+* [Jacob Kausler](https://github.com/jakekausler)
 
 ---
 
-## Original [`django-opensearch-dsl`](https://github.com/qcoumes/django-opensearch-dsl) project
+## Original [`django-elasticsearch-dsl`](https://github.com/django-es/django-elasticsearch-dsl) project
 
 ### Development Lead
 
