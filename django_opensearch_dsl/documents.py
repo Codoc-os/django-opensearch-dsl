@@ -150,9 +150,9 @@ class Document(DSLDocument):
 
         return preparers
 
-    def prepare(self, instance):
+    def prepare(self, instance, limit_fields=None):
         """Generate the opensearch's document from `instance` based on defined fields."""
-        data = {name: prep_func(instance) for name, field, prep_func in self._prepared_fields}
+        data = {name: prep_func(instance) for name, field, prep_func in self._prepared_fields if limit_fields is None or name in limit_fields}
         return data
 
     @classmethod
@@ -196,18 +196,27 @@ class Document(DSLDocument):
         """
         return object_instance.pk
 
-    def _prepare_action(self, object_instance, action):
-        return {
-            "_op_type": action,
+    def _prepare_action(self, object_instance, action, limit_fields):
+        """Prepare an action dict for bulk indexing."""
+        os_action = action if action != "upsert" else "update"
+        if os_action != "update" and limit_fields != None:
+            raise ValueError("limit_fields can only be used with update action")
+        body = {
+            "_op_type": os_action,
             "_index": self._index._name,  # noqa
             "_id": self.generate_id(object_instance),
-            "_source" if action != "update" else "doc": (self.prepare(object_instance) if action != "delete" else None),
         }
+        source_field = "_source" if os_action != "update" else "doc"
+        body[source_field] = self.prepare(object_instance, limit_fields) if action != "delete" else None
+        if action == 'upsert':
+            body['doc_as_upsert'] = True
+            body['detect_noop'] = True
+        return body
 
-    def _get_actions(self, object_list, action):
+    def _get_actions(self, object_list, action, limit_fields):
         for object_instance in object_list:
             if action == "delete" or self.should_index_object(object_instance):
-                yield self._prepare_action(object_instance, action)
+                yield self._prepare_action(object_instance, action, limit_fields)
 
     def _bulk(self, *args, parallel=False, using=None, **kwargs):
         """Helper for switching between normal and parallel bulk operation."""
@@ -223,7 +232,7 @@ class Document(DSLDocument):
         """
         return True
 
-    def update(self, thing, action, *args, refresh=None, using=None, **kwargs):  # noqa
+    def update(self, thing, action, *args, refresh=None, using=None, limit_fields=None, **kwargs):  # noqa
         """Update document in OS for a model, iterable of models or queryset."""
         if refresh is None:
             refresh = getattr(self.Index, "auto_refresh", DODConfig.auto_refresh_enabled())
@@ -233,4 +242,4 @@ class Document(DSLDocument):
         else:
             object_list = thing
 
-        return self._bulk(self._get_actions(object_list, action), *args, refresh=refresh, using=using, **kwargs)
+        return self._bulk(self._get_actions(object_list, action, limit_fields), *args, refresh=refresh, using=using, **kwargs)
