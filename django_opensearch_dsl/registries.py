@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ImproperlyConfigured
-from opensearch_dsl import AttrDict
+from opensearchpy.helpers.utils import AttrDict
 
 from .apps import DODConfig
 from .exceptions import RedeclaredFieldError

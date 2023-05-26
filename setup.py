@@ -27,14 +27,14 @@ LONG_DESCRIPTION = (
     + codecs.open(os.path.join(DIRNAME, 'docs/CHANGELOG.md'), encoding='utf-8').read()
 )
 REQUIREMENTS = [
-    'opensearch-dsl>=1.0.0, <3.0.0',
+    'opensearch-py>=2.2.0',
     'dateutils'
 ]
 
 setup(
     name='django-opensearch-dsl',
-    version='0.5.0',
-    description="""Wrapper around opensearch-dsl-py for django models""",
+    version='0.5.1',
+    description="""Wrapper around opensearch-py for django models""",
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     author='Quentin Coumes (Codoc)',
@@ -44,6 +44,6 @@ setup(
     include_package_data=True,
     install_requires=REQUIREMENTS,
     license="Apache Software License 2.0",
-    keywords='django elasticsearch elasticsearch-dsl opensearch opensearch-dsl',
+    keywords='django elasticsearch elasticsearch-dsl opensearch opensearch-dsl opensearch-py',
     classifiers=CLASSIFIERS,
 )

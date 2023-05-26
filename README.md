@@ -4,22 +4,23 @@ Django Opensearch DSL
 [![PyPI Version](https://badge.fury.io/py/django-opensearch-dsl.svg)](https://badge.fury.io/py/django-opensearch-dsl)
 [![Documentation Status](https://readthedocs.org/projects/django-opensearch-dsl/badge/?version=latest)](https://django-opensearch-dsl.readthedocs.io/en/latest/?badge=latest)
 ![Tests](https://github.com/Codoc-os/django-opensearch-dsl/workflows/Tests/badge.svg)
-[![Python 3.7+](https://img.shields.io/badge/Python-3.6+-brightgreen.svg)](#)
-[![Django 3.2+](https://img.shields.io/badge/Django-2.1+-brightgreen.svg)](#)
+[![Python 3.7+](https://img.shields.io/badge/Python-3.7+-brightgreen.svg)](#)
+[![Django 3.2+](https://img.shields.io/badge/Django-3.2+-brightgreen.svg)](#)
+[![OpenSearch 1.3+, 2.7+](https://img.shields.io/badge/OpenSearch-1.3+-brightgreen.svg)](#)
 [![License Apache 2](https://img.shields.io/badge/license-Apache%202-brightgreen.svg)](https://github.com/Codoc-os/django-opensearch-dsl/blob/master/LICENSE)
 [![codecov](https://codecov.io/gh/Codoc-os/django-opensearch-dsl/branch/master/graph/badge.svg)](https://codecov.io/gh/Codoc-os/django-opensearch-dsl)
 [![CodeFactor](https://www.codefactor.io/repository/github/Codoc-os/django-opensearch-dsl/badge)](https://www.codefactor.io/repository/github/Codoc-os/django-opensearch-dsl)
 
 **Django Opensearch DSL** is a package that allows the indexing of Django models in opensearch. It is built as a thin
-wrapper around [`opensearch-dsl-py`](https://github.com/opensearch-project/opensearch-dsl-py)
-so you can use all the features developed by the `opensearch-dsl` team.
+wrapper around [`opensearch-py`](https://github.com/opensearch-project/opensearch-py)
+so you can use all the features developed by the `opensearch-py` team.
 
 You can view the full documentation
 at [https://django-opensearch-dsl.readthedocs.io](https://django-opensearch-dsl.readthedocs.io/en/latest/).
 
 ## Features
 
-- Based on [`opensearch-dsl-py`](https://github.com/opensearch-project/opensearch-dsl-py) so you can make queries with
+- Based on [`opensearch-py`](https://github.com/opensearch-project/opensearch-py) so you can make queries with
   the [`Search`](https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#the-search-object)
   object.
 - Management commands for creating, deleting, and populating indices and documents.
@@ -31,10 +32,9 @@ at [https://django-opensearch-dsl.readthedocs.io](https://django-opensearch-dsl.
 
 `django-opensearch-dsl` only support the supported version of each dependency (mainstream & lts).
 
-* `Python>=3.7`
-* `django>=3.2`
-* `opensearch-dsl>=1.0.0, <3.0.0`
-* `python-dateutil~=2.8.2`
+* `Python` ([supported versions](https://devguide.python.org/versions/))
+* `Django` ([supported versions](https://www.djangoproject.com/download/#supported-versions))
+* `opensearch-py` ([compatibility matrix](https://github.com/opensearch-project/opensearch-py/blob/main/COMPATIBILITY.md))
 
 ## Installation and Configuration
 
@@ -62,7 +62,7 @@ OPENSEARCH_DSL = {
 ```
 
 `OPENSEARCH_DSL` is then passed
-to [`opensearch_dsl_py.connections.configure`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
+to [`opensearchpy.connection.connections.configure`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
 .
 
 ## Create Document Classes

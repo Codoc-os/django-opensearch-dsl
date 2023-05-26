@@ -26,7 +26,7 @@ OPENSEARCH_DSL = {
 ```
 
 `OPENSEARCH_DSL` is then passed
-to [`opensearch_dsl.connections.configure`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
+to [`opensearchpy.connection.connections.configure`](http://elasticsearch-dsl.readthedocs.io/en/stable/configuration.html#multiple-clusters)
 .
 
 ## Create Document Classes
@@ -102,7 +102,7 @@ See [management commands](management.md) for more information.
 ## Search
 
 To get
-an `opensearch-dsl` [`Search`](https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#the-search-object)
+an `opensearch-py` [`Search`](https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#the-search-object)
 instance, use:
 
 ```python
@@ -117,7 +117,7 @@ for hit in s:
 ```
 
 The previous example returns a result specific
-to [`opensearch-dsl`](http://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#response), but it is also
+to [`opensearch-py`](http://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#response), but it is also
 possible to convert the opensearch result into a real Django queryset, just be aware that this costs a SQL request to
 retrieve the model instances with the ids returned by the opensearch query.
 

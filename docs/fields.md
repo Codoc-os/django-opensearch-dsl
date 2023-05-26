@@ -2,7 +2,7 @@ Document Field Reference
 ========================
 
 The `django_opensearch_dsl.fields` are subclasses
-of [`opensearch-dsl-py`'s fields](http://elasticsearch-dsl.readthedocs.io/en/stable/persistence.html#mappings). They
+of [`opensearch-py`'s fields](http://elasticsearch-dsl.readthedocs.io/en/stable/persistence.html#mappings). They
 just add support for retrieving data from Django models.
 
 ## Available Fields
