@@ -203,7 +203,7 @@ class Document(DSLDocument):
     def _prepare_action(self, object_instance, action, limit_fields):
         """Prepare an action dict for bulk indexing."""
         os_action = action if action != "upsert" else "update"
-        if os_action != "update" and limit_fields != None:
+        if os_action != "update" and limit_fields is not None:
             raise ValueError("limit_fields can only be used with update action")
         body = {
             "_op_type": os_action,
