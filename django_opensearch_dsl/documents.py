@@ -152,7 +152,11 @@ class Document(DSLDocument):
 
     def prepare(self, instance, limit_fields=None):
         """Generate the opensearch's document from `instance` based on defined fields."""
-        data = {name: prep_func(instance) for name, field, prep_func in self._prepared_fields if limit_fields is None or name in limit_fields}
+        data = {
+            name: prep_func(instance)
+            for name, field, prep_func in self._prepared_fields
+            if limit_fields is None or name in limit_fields
+        }
         return data
 
     @classmethod
@@ -208,9 +212,9 @@ class Document(DSLDocument):
         }
         source_field = "_source" if os_action != "update" else "doc"
         body[source_field] = self.prepare(object_instance, limit_fields) if action != "delete" else None
-        if action == 'upsert':
-            body['doc_as_upsert'] = True
-            body['detect_noop'] = True
+        if action == "upsert":
+            body["doc_as_upsert"] = True
+            body["detect_noop"] = True
         return body
 
     def _get_actions(self, object_list, action, limit_fields):
@@ -242,4 +246,6 @@ class Document(DSLDocument):
         else:
             object_list = thing
 
-        return self._bulk(self._get_actions(object_list, action, limit_fields), *args, refresh=refresh, using=using, **kwargs)
+        return self._bulk(
+            self._get_actions(object_list, action, limit_fields), *args, refresh=refresh, using=using, **kwargs
+        )
