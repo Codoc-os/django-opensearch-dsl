@@ -126,9 +126,7 @@ class Command(BaseCommand):
                     exit(1)
             except opensearchpy.exceptions.RequestError:
                 if verbosity or not ignore_error:
-                    self.stderr.write(
-                        f"{pp} index '{index._name}'... {self.style.ERROR('Error (already exists)')}"
-                    )  # noqa
+                    self.stderr.write(f"{pp} index '{index._name}'... {self.style.ERROR('Error')}")  # noqa
                 if not ignore_error:
                     self.stderr.write("exiting...")
                     exit(1)
