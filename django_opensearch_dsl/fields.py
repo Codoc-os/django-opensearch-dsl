@@ -145,7 +145,7 @@ def ListField(field):  # noqa
 
     original_get_value_from_instance = field.get_value_from_instance
 
-    def get_value_from_instance(self, instance):
+    def get_value_from_instance(self, instance, field_value_to_ignore=None):
         if not original_get_value_from_instance(instance):  # pragma: no cover
             return []
         return [value for value in original_get_value_from_instance(instance)]
