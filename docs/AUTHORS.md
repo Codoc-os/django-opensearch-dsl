@@ -9,6 +9,7 @@
 * [David Guillot](https://github.com/David-Guillot)
 * [Colin Seifer](https://github.com/Colin-Seifer)
 * [Jacob Kausler](https://github.com/jakekausler)
+* [ghkdxofla - Taelim Hwang (Limy)](https://github.com/ghkdxofla)
 
 ---
 

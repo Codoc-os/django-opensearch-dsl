@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.5.2 (2024-01-11)
+
+* Add the missing parameter `field_value_to_ignore=None` to `django_opensearch_dsl.fields.ListField.get_value_from_instance`
+  ([#47](https://github.com/Codoc-os/django-opensearch-dsl/pull/47),
+  Contributed by [ghkdxofla - Taelim Hwang (Limy)](https://github.com/ghkdxofla)).
+
 ### 0.5.1 (2023-05-18)
 
 * Change references from `opensearch-dsl-py` to `opensearch-py`.  
