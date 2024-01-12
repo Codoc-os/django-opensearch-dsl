@@ -28,6 +28,10 @@ class WithFixturesMixin(object):
         class Meta:
             app_label = "foo"
 
+    class ModelF(models.Model):
+        class Meta:
+            app_label = "foo"
+
     def _generate_doc_mock(self, _model, index=None, mock_qs=None, _ignore_signals=False, _related_models=None):
         _index = index
 

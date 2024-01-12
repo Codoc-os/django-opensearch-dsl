@@ -1,7 +1,6 @@
 from unittest import TestCase, mock
 from unittest.mock import Mock
 
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.test import override_settings
 
@@ -30,33 +29,40 @@ class DocumentRegistryTestCase(WithFixturesMixin, TestCase):
         self.assertEqual(registry._models, {})
 
     def test_register(self):
-        self.assertEqual(self.registry._models[self.ModelA], set([self.doc_a1, self.doc_a2]))
-        self.assertEqual(self.registry._models[self.ModelB], set([self.doc_b1]))
+        self.assertEqual(self.registry._models[self.ModelA], {self.doc_a1, self.doc_a2})
+        self.assertEqual(self.registry._models[self.ModelB], {self.doc_b1})
 
         self.assertEqual(
-            self.registry._indices[self.index_1], set([self.doc_a1, self.doc_a2, self.doc_c1, self.doc_d1, self.doc_e1])
+            self.registry._indices[self.index_1], {self.doc_a1, self.doc_a2, self.doc_c1, self.doc_d1, self.doc_e1}
         )
-        self.assertEqual(self.registry._indices[self.index_2], set([self.doc_b1]))
+        self.assertEqual(self.registry._indices[self.index_2], {self.doc_b1})
 
     def test_register_with_related_models(self):
-        self.assertEqual(self.registry._related_models[self.ModelE], set([self.ModelD]))
+        self.assertEqual(self.registry._related_models[self.ModelE], {self.ModelD})
 
     def test_get_related_doc(self):
         instance = self.ModelE()
         related_set = set()
         for doc in self.registry._get_related_doc(instance):
             related_set.add(doc)
-        self.assertEqual(related_set, set([self.doc_d1]))
+        self.assertEqual(related_set, {self.doc_d1})
 
     def test_get_indices(self):
-        self.assertEqual(self.registry.get_indices(), set([self.index_1, self.index_2]))
+        self.assertEqual(self.registry.get_indices(), {self.index_1, self.index_2})
 
     def test_get_indices_by_model(self):
-        self.assertEqual(self.registry.get_indices([self.ModelA]), set([self.index_1]))
+        self.assertEqual(self.registry.get_indices([self.ModelA]), {self.index_1})
 
     def test_get_indices_by_unregister_model(self):
         ModelC = Mock()
         self.assertFalse(self.registry.get_indices([ModelC]))
+
+    def test_get_models(self):
+        self.assertEqual(self.registry.get_models(), {self.ModelA, self.ModelB, self.ModelC, self.ModelD, self.ModelE})
+
+    def test_contains(self):
+        self.assertIn(self.ModelA, self.registry)
+        self.assertNotIn(self.ModelF, self.registry)
 
     def test_update_instance(self):
         doc_a3 = self._generate_doc_mock(self.ModelA, self.index_1, _ignore_signals=True)

@@ -2,6 +2,8 @@ from collections import defaultdict
 from copy import deepcopy
 
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
+from django.db.models import Model
+from opensearchpy.helpers.document import Document as DSLDocument
 from opensearchpy.helpers.utils import AttrDict
 
 from .apps import DODConfig
@@ -160,12 +162,24 @@ class DocumentRegistry:
         """
         self.update(instance, action="delete", **kwargs)
 
+    def get_models(self):
+        """Get all models in the registry."""
+        return set(self._models.keys())
+
     def get_indices(self, models=None):
         """Get all indices in the registry or the indices for a list of models."""
         if models is not None:
             return set(index for index, docs in self._indices.items() for doc in docs if doc.django.model in models)
 
         return set(self._indices.keys())
+
+    def __contains__(self, obj):
+        """Check that a model is in the registry."""
+        if issubclass(obj, Model):
+            return obj in self._models or obj in self._related_models
+        raise TypeError(
+            f"'in <{type(self).__name__}>' requires a Model subclass as left operand, not {type(dict).__name__}"
+        )
 
 
 registry = DocumentRegistry()
