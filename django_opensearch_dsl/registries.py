@@ -162,9 +162,7 @@ class DocumentRegistry:
         self.update(instance, action="delete", **kwargs)
 
     def get_models(self):
-        """
-        Get all models in the registry
-        """
+        """Get all models in the registry."""
         return set(self._models.keys())
 
     def get_indices(self, models=None):
@@ -175,9 +173,8 @@ class DocumentRegistry:
         return set(self._indices.keys())
 
     def __contains__(self, model):
-        """
-        Checks that model is in registry
-        """
+        """Checks that model is in registry."""
         return model in self._models or model in self._related_models
+
 
 registry = DocumentRegistry()
