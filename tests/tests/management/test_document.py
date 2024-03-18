@@ -5,8 +5,8 @@ import time
 from django.test import TestCase
 
 from django_dummy_app.commands import call_command
-from django_dummy_app.documents import CountryDocument, ContinentDocument, EventDocument
-from django_dummy_app.models import Country, Event, Continent
+from django_dummy_app.documents import ContinentDocument, CountryDocument, EventDocument
+from django_dummy_app.models import Continent, Country, Event
 from django_opensearch_dsl.registries import registry
 
 

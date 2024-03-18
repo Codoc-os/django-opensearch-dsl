@@ -5,7 +5,8 @@ from opensearchpy.helpers.query import Q
 
 from django_opensearch_dsl import Document, fields
 from django_opensearch_dsl.registries import registry
-from .models import Country, Continent, Event
+
+from .models import Continent, Country, Event
 
 
 @registry.register_document

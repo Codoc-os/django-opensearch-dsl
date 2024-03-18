@@ -1,5 +1,4 @@
 import django
-
 from django.utils.module_loading import autodiscover_modules
 
 from .documents import Document  # noqa

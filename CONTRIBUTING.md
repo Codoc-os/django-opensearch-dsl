@@ -58,7 +58,8 @@ Ready to contribute? Here's how to set up `django-opensearch-dsl` for local deve
    ```bash
    python3 -m venv venv
    source venv/bin/activate
-   pip3 install -r develop_requirements.txt
+   pip3 install -r requirements.txt
+   pip3 install -r requirements_dev.txt
    ```
 
 4. Create a branch for local development:

@@ -3,12 +3,12 @@ import sys
 import time
 from collections import deque
 from functools import partial
-from typing import Optional, Iterable
+from typing import Iterable, Optional
 
 from django.db import models
-from django.db.models import QuerySet, Q
-from opensearchpy.helpers.document import Document as DSLDocument
+from django.db.models import Q, QuerySet
 from opensearchpy.helpers import bulk, parallel_bulk
+from opensearchpy.helpers.document import Document as DSLDocument
 
 from . import fields
 from .apps import DODConfig
@@ -210,7 +210,7 @@ class Document(DSLDocument):
                 yield self._prepare_action(object_instance, action)
 
     def _bulk(self, *args, parallel=False, using=None, **kwargs):
-        """Helper for switching between normal and parallel bulk operation."""
+        """Allow switching between normal and parallel bulk operation."""
         if parallel:
             return self.parallel_bulk(*args, using=using, **kwargs)
         return self.bulk(*args, using=using, **kwargs)

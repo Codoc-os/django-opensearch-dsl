@@ -1,15 +1,33 @@
 #!/bin/bash
 
 BASE_PATH="$(dirname "$0")"
-
 source "$BASE_PATH/colors.sh"
-
 EXIT_CODE=0
 
-echo "${Cyan}Formatting code with black...$Color_Off"
-black -l 120 django_opensearch_dsl tests
+
+################################################################################
+#                                   ISORT                                      #
+################################################################################
+echo -n "${Cyan}Formatting import with isort... $Color_Off"
+out=$(isort django_opensearch_dsl/ tests/)
+if [ ! -z "$out" ] ; then
+  echo ""
+  echo -e "$out"
+fi
+echo "${Green}Ok ✅ $Color_Off"
 echo ""
 
+################################################################################
+#                                   BLACK                                      #
+################################################################################
+echo "${Cyan}Formatting code with black...$Color_Off"
+black -l 120 django_opensearch_dsl/ tests/
+echo ""
+
+
+################################################################################
+#                                PYCODESTYLE                                   #
+################################################################################
 echo -n "${Cyan}Running pycodestyle... $Color_Off"
 out=$(pycodestyle django_opensearch_dsl tests)
 if [ "$?" -ne 0 ] ; then
@@ -22,9 +40,12 @@ fi
 echo ""
 
 
+################################################################################
+#                                PYDOCSTYLE                                    #
+################################################################################
 echo -n "${Cyan}Running pydocstyle... $Color_Off"
-out=$(pydocstyle --count django_opensearch_dsl tests)
-if [ "${PIPESTATUS[0]}" -ne 0 ] ; then
+out=$(pydocstyle --count django_opensearch_dsl/ tests/)
+if [ "$?" -ne 0 ] ; then
   echo "${Red}Error !$Color_Off"
   echo -e "$out"
   EXIT_CODE=1
@@ -32,6 +53,25 @@ else
   echo "${Green}Ok ✅ $Color_Off"
 fi
 echo ""
+
+
+################################################################################
+#                                  BANDIT                                      #
+################################################################################
+echo -n "${Cyan}Running bandit... $Color_Off"
+out=$(bandit --ini=setup.cfg -ll 2> /dev/null)
+if [ "$?" -ne 0 ] ; then
+  echo "${Red}Error !$Color_Off"
+  echo -e "$out"
+  EXIT_CODE=1
+else
+  echo "${Green}Ok ✅ $Color_Off"
+fi
+echo ""
+
+
+
+################################################################################
 
 
 if [ $EXIT_CODE = 1 ] ; then

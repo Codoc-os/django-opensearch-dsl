@@ -1,9 +1,9 @@
 import datetime
-from typing import Union, List
+from typing import List, Union
 
 from dateutil.parser import isoparse
 from django.conf import settings
-from django.utils.timezone import make_aware, is_aware
+from django.utils.timezone import is_aware, make_aware
 
 Nothing = type(Ellipsis)
 Values = Union[None, int, float, datetime.datetime, str, List["Values"]]
