@@ -118,17 +118,10 @@ class Command(BaseCommand):
                     except opensearchpy.exceptions.NotFoundError:
                         pass
                     index.create()
-            except opensearchpy.exceptions.NotFoundError:
+            except opensearchpy.exceptions.TransportError as e:
                 if verbosity or not ignore_error:
-                    self.stderr.write(f"{pp} index '{index._name}'...{self.style.ERROR('Error (not found)')}")  # noqa
-                if not ignore_error:
-                    self.stderr.write("exiting...")
-                    exit(1)
-            except opensearchpy.exceptions.RequestError:
-                if verbosity or not ignore_error:
-                    self.stderr.write(
-                        f"{pp} index '{index._name}'... {self.style.ERROR('Error (already exists)')}"
-                    )  # noqa
+                    error = self.style.ERROR(f"Error: {e.error} - {e.info}")
+                    self.stderr.write(f"{pp} index '{index._name}'...\n{error}")  # noqa
                 if not ignore_error:
                     self.stderr.write("exiting...")
                     exit(1)
