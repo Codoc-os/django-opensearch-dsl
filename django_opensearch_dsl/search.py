@@ -1,8 +1,7 @@
 from django.db.models import Case, When
 from django.db.models.fields import IntegerField
-
-from opensearchpy.helpers.search import Search as DSLSearch
 from opensearchpy.connection.connections import connections
+from opensearchpy.helpers.search import Search as DSLSearch
 
 
 class Search(DSLSearch):

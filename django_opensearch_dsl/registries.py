@@ -1,8 +1,7 @@
 from collections import defaultdict
 from copy import deepcopy
 
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from opensearchpy.helpers.utils import AttrDict
 
 from .apps import DODConfig

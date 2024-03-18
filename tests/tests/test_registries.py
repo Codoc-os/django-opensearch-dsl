@@ -1,13 +1,12 @@
-from unittest import mock
+from unittest import TestCase, mock
 from unittest.mock import Mock
-from unittest import TestCase
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.test import override_settings
 
-from django_opensearch_dsl.registries import DocumentRegistry
 from django_opensearch_dsl.indices import Index
+from django_opensearch_dsl.registries import DocumentRegistry
 
 from .fixtures import WithFixturesMixin
 

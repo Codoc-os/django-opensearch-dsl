@@ -1,21 +1,20 @@
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 from django.conf import settings
 from django.db import models
 from django.test import TestCase, override_settings
 from django.utils.translation import gettext_lazy as _
-from opensearchpy.helpers.field import GeoPoint
-from opensearchpy.helpers.document import InnerDoc
 from opensearchpy import OpenSearch
+from opensearchpy.helpers.document import InnerDoc
+from opensearchpy.helpers.field import GeoPoint
 
+from django_dummy_app.documents import ContinentDocument
+from django_dummy_app.models import Continent
 from django_opensearch_dsl import fields
 from django_opensearch_dsl.apps import DODConfig
 from django_opensearch_dsl.documents import Document
 from django_opensearch_dsl.exceptions import ModelFieldNotMappedError, RedeclaredFieldError
 from django_opensearch_dsl.registries import DocumentRegistry
-
-from django_dummy_app.models import Continent
-from django_dummy_app.documents import ContinentDocument
 
 registry = DocumentRegistry()
 

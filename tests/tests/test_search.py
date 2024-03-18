@@ -1,8 +1,8 @@
 from django.test import TestCase
 from opensearchpy.helpers.query import Q
 
-from django_dummy_app.documents import CountryDocument, ContinentDocument
-from django_dummy_app.models import Country, Continent
+from django_dummy_app.documents import ContinentDocument, CountryDocument
+from django_dummy_app.models import Continent, Country
 from django_opensearch_dsl.registries import registry
 
 

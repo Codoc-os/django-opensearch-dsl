@@ -15,6 +15,7 @@ from django.core.management.base import OutputWrapper
 from django.db.models import Q
 
 from django_opensearch_dsl.registries import registry
+
 from ..enums import OpensearchAction
 from ..types import parse
 

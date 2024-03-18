@@ -4,7 +4,7 @@ import os
 from django.test import SimpleTestCase
 
 from django_dummy_app.commands import call_command
-from django_dummy_app.documents import CountryDocument, ContinentDocument, EventDocument
+from django_dummy_app.documents import ContinentDocument, CountryDocument, EventDocument
 from django_opensearch_dsl.registries import registry
 
 

@@ -24,14 +24,31 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install packages
-        run: pip install -r develop_requirements.txt
+        run: pip install -r requirements_dev.txt
 
       - name: Black
         run: |
-          black --check -l 120 django_opensearch_dsl tests
+          black --check -l 120 django_opensearch_dsl/ tests/
+
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Isort
+        run: |
+          isort --check django_opensearch_dsl/ tests/
 
   pycodestyle:
     runs-on: ubuntu-latest
@@ -41,14 +58,14 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install packages
-        run: pip install -r develop_requirements.txt
+        run: pip install -r requirements_dev.txt
 
       - name: Pycodestyle
         run: |
-          pycodestyle django_opensearch_dsl tests
+          pycodestyle django_opensearch_dsl/ tests/
 
   pydocstyle:
     runs-on: ubuntu-latest
@@ -58,29 +75,44 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install packages
-        run: pip install -r develop_requirements.txt
+        run: pip install -r requirements_dev.txt
 
       - name: Pydocstyle
         run: |
-          pydocstyle --count django_opensearch_dsl tests
+          pydocstyle --count django_opensearch_dsl/ tests/
+
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: '3.12'
+
+      - name: Install packages
+        run: pip install -r requirements_dev.txt
+
+      - name: Bandit
+        run: |
+          bandit --ini=setup.cfg -ll 2> /dev/null
 
 
   test:
-    needs: [black, pycodestyle, pydocstyle]
+    needs: [black, isort, pycodestyle, pydocstyle, bandit]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ 3.7, 3.8, 3.9, '3.10', '3.11']
-        django-version: [ 32, 40, 41 ]
+        python-version: [ 3.9, '3.10', '3.11', '3.12']
+        django-version: [ 32, 42, 50 ]
         opensearch-version: [ 10, 20 ]
         exclude:
-          - python-version: 3.7
-            django-version: 40
-          - python-version: 3.7
-            django-version: 41
+          - python-version: 3.9
+            django-version: 50
 
     steps:
       - uses: actions/checkout@v2
