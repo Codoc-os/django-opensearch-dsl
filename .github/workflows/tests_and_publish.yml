@@ -19,7 +19,7 @@ jobs:
   black:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@master
@@ -36,7 +36,7 @@ jobs:
   isort:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@master
@@ -53,7 +53,7 @@ jobs:
   pycodestyle:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@master
@@ -70,7 +70,7 @@ jobs:
   pydocstyle:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@master
@@ -87,7 +87,7 @@ jobs:
   bandit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@master
@@ -115,7 +115,7 @@ jobs:
             django-version: 50
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@master
