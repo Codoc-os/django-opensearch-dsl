@@ -2,8 +2,8 @@ version: '3.7'
 
 services:
 
-  opensearch_test_10:
-    container_name: opensearch_test_10
+  opensearch_test_1:
+    container_name: opensearch_test_1
     image: opensearchproject/opensearch:1
     ports:
       - "9210:9200"
@@ -13,8 +13,8 @@ services:
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
-  opensearch_test_20:
-    container_name: opensearch_test_20
+  opensearch_test_2:
+    container_name: opensearch_test_2
     image: opensearchproject/opensearch:2
     ports:
       - "9220:9200"
@@ -23,3 +23,4 @@ services:
       - plugins.security.disabled=true
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD="XJ67NCmLj4yMPPz0wthVUvVGV0cQiq"

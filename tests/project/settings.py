@@ -133,15 +133,20 @@ LOGGING = {
     },
 }
 
+OPENSEARCH_PORT = os.getenv("DJANGO_OS_PORT", "9220")
 OPENSEARCH_DSL = {
     "default": {
         "hosts": [
             {
                 "scheme": "http",
                 "host": "localhost",
-                "port": os.getenv("DJANGO_OS_PORT", "9220"),
+                "port": OPENSEARCH_PORT,
             }
         ],
+        "http_auth": ("admin", ("XJ67NCmLj4yMPPz0wthVUvVGV0cQiq" if OPENSEARCH_PORT == "9220" else "admin")),
+        "timeout": 30,
+        "max_retries": 3,
+        "retry_on_timeout": True,
     },
     # Dummy connection to test `using` interactions
     "dummy": {
