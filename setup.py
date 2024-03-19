@@ -28,8 +28,11 @@ LONG_DESCRIPTION = (
 )
 REQUIREMENTS = [
     'opensearch-py>=2.2.0',
-    'dateutils'
+    'dateutils',
 ]
+EXTRA_REQUIREMENTS = {
+    'celery': ["celery>=4.1.0"],
+}
 
 setup(
     name='django-opensearch-dsl',
@@ -43,6 +46,7 @@ setup(
     packages=['django_opensearch_dsl'],
     include_package_data=True,
     install_requires=REQUIREMENTS,
+    extras_require=EXTRA_REQUIREMENTS,
     license="Apache Software License 2.0",
     keywords='django elasticsearch elasticsearch-dsl opensearch opensearch-dsl opensearch-py',
     classifiers=CLASSIFIERS,

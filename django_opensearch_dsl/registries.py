@@ -104,7 +104,6 @@ class DocumentRegistry:
         """
         if not DODConfig.autosync_enabled():
             return
-
         for doc in self._get_related_doc(instance):
             doc_instance = doc()
             try:

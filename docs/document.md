@@ -9,7 +9,7 @@ The `Django` subclass contains parameters related to Django's side of the docume
 * `fields` (*optional*) - List model's field name that should be indexed. Do not add the fields you manually declare
   into this list. See [Document Field Reference](fields.md) for how to manually define fields.
 * `queryset_pagination` (*optional*) - Size of the chunk when indexing,
-  override [`OPENSEARCH_DSL_QUERYSET_PAGINATION`](settings.md#opensearch_dsl_queryset_pagination.md).
+  override [`OPENSEARCH_DSL_QUERYSET_PAGINATION`](settings.md#opensearch_dsl_queryset_pagination).
 * `related_models` (*optional*) - List of related Django models. Specifies a relation between models that allows for
   index updating based on these defined relationships.
 
