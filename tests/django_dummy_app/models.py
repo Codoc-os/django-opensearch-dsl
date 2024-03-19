@@ -17,7 +17,7 @@ class Country(models.Model):
         return f"{self.name}"
 
     @property
-    def event_count(self):
+    def event_count_prop(self):
         return self.events.all().count()
 
     def event_count_func(self):

@@ -16,9 +16,8 @@ class ContinentDocument(Document):
 
     class Django:
         model = Continent
-        fields = [
-            "name",
-        ]
+        related_models = [Country]
+        fields = ["name"]
 
     id = fields.LongField()
     countries = fields.NestedField(
@@ -30,6 +29,9 @@ class ContinentDocument(Document):
         }
     )
 
+    def get_instances_from_related(self, related: Country) -> Continent:
+        return related.continent
+
 
 @registry.register_document
 class CountryDocument(Document):
@@ -39,11 +41,7 @@ class CountryDocument(Document):
 
     class Django:
         model = Country
-        fields = [
-            "name",
-            "area",
-            "population",
-        ]
+        fields = ["name", "area", "population"]
 
     id = fields.LongField()
     continent = fields.ObjectField(
@@ -53,7 +51,7 @@ class CountryDocument(Document):
         }
     )
     events_id = fields.LongField(multi=True)
-    event_count_property = fields.LongField(attr="event_count")
+    event_count_prop = fields.LongField(attr="event_count_prop")
     event_count_func = fields.LongField(attr="event_count_func")
 
     def prepare_events_id(self, obj):
@@ -73,13 +71,7 @@ class EventDocument(Document):
     class Django:
         model = Event
         queryset_pagination = 512
-        fields = [
-            "name",
-            "date",
-            "source",
-            "comment",
-            "null_field",
-        ]
+        fields = ["name", "date", "source", "comment", "null_field"]
 
     country = fields.ObjectField(doc_class=CountryDocument)
     unknown = fields.LongField(required=False)

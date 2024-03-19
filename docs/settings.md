@@ -49,3 +49,38 @@ Default: `4096`
 Size of the chunk used when indexing data. Can be overriden by setting `queryset_pagination` inside `Document`'
 s [`Django` subclass](document.md).
 
+## `OPENSEARCH_DSL_SIGNAL_PROCESSOR`
+
+This (optional) setting controls what SignalProcessor class is used to handle Django’s signals and
+keep the indices up-to-date. Default to `django_opensearch_dsl.signals.RealTimeSignalProcessor`.
+
+Valid choices are:
+
+* `django_opensearch_dsl.signals.RealTimeSignalProcessor`
+
+Operation are processed synchronously as soon as the signal is emitted.
+
+* `django_opensearch_dsl.signals.CelerySignalProcessor`
+
+Uses Celery to process the operations asynchronously.
+
+## `OPENSEARCH_DSL_SIGNAL_PROCESSOR_SERIALIZER_CLASS`
+
+Default: `django.core.serializers.json.DjangoJSONEncoder`.
+
+When using asynchronous signal processor such as `CelerySignalProcessor`, the instance will probably be deleted from the
+database by the time the operation is processed. Since `django-opensearch-dsl` need a relies on the database to do most
+of its operation, the instance will be serialized by the signal and deserialized by the processor to keep a valid
+instance.
+
+This serialization process can be customized using this setting.
+See [Django's serialization documentation](https://docs.djangoproject.com/en/5.0/topics/serialization/#serialization-formats-json)
+for more information.
+
+## `OPENSEARCH_DSL_SIGNAL_PROCESSOR_DESERIALIZER_CLASS`
+
+Default: `OPENSEARCH_DSL_SIGNAL_PROCESSOR_SERIALIZER_CLASS`.
+
+Use by the processor to deserialize the data serialized by the signal.
+See [`OPENSEARCH_DSL_SIGNAL_PROCESSOR_SERIALIZER_CLASS`](settings.md#opensearch_dsl_signal_processor_serializer_class)
+for more information.
