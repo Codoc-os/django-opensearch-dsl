@@ -55,8 +55,32 @@ This subclass contains parameters about Opensearch :
   the ones defined in `OPENSEARCH_DSL_INDEX_SETTINGS`).
 
   For a list of settings,
-  see [Opensearch's index settings](https://opensearch.org/docs/latest/opensearch/rest-api/index-apis/create-index/#index-settings)
-  .
+  see [Opensearch's index settings](https://opensearch.org/docs/latest/opensearch/rest-api/index-apis/create-index/#index-settings).
+
+## `Meta` subclass
+
+Any attributes on the `Meta` class that are instance of `opensearchpy.MetaField` will be used to control the mapping of
+the meta fields (`_all`, `dynamic`, etc).  
+Just name the parameter (without the leading underscore) as the field you wish to map and pass any parameters to the
+`MetaField` class:
+
+```python
+@registry.register_document
+class CountryDocument(Document):
+    class Django:
+        ...
+    
+    class Meta:
+        dynamic = MetaField('strict')
+    
+    ...
+```
+
+If you do not plan to use the dynamic mapping feature of OpenSearch, it is **highly recommended** to set the `dynamic`
+meta fields to `strict`. This can prevent future problem if you need to modify the mapping later (see 
+[Updating an existing index](document.md#updating-an-existing-index) for more information).
+
+
 
 ## Manually defined fields
 
@@ -183,3 +207,13 @@ class ArticleDocument(Document):
     def generate_id(cls, article):
         return article.slug
 ```
+
+## Updating an existing index
+
+***/!\ Caution:*** Once the OpenSearch index has been created, modifying the `Document` class will not update the
+OpenSearch index mappings, **but any new field will be sent when indexing new document**.  
+This can lead to some problems since dynamic mapping is enabled by default and these new fields will be dynamically
+mapped with probably the wrong type.
+
+To apply changes done to your `Document` class to an existing OpenSearch index, you must call the
+[`manage.py opensearch index update <index>`](management.md#index-subcommand) command.

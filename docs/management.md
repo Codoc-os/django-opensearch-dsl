@@ -51,7 +51,12 @@ Manage the creation and deletion of indices.
 
 positional arguments:
   {create,delete,rebuild}
-                        Whether you want to create, delete or rebuild the indices.
+                        Whether you want to create, update, delete or rebuild the indices. Update
+                        allow you to update your indices mappings if you modified them after
+                        creation. This should be done prior to indexing new document with dynamic
+                        mapping (enabled by default), a default mapping with probably the wrong type
+                        would be created for any new field.
+
   INDEX                 Only manage the given indices.
 
 optional arguments:
@@ -67,6 +72,7 @@ This command takes a mandatory positional argument:
 * `create` - Create the indices.
 * `delete` - Delete the indices.
 * `rebuild` - Rebuild (delete then create) the indices.
+* `update` - Try to update the mapping of the indices.
 
 The command can also take any number of optional positional arguments which are the names of the indices that should be
 created/deleted. If no index is provided, the action is applied to all indices.

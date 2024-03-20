@@ -5,6 +5,7 @@ from django.test import SimpleTestCase
 
 from django_dummy_app.commands import call_command
 from django_dummy_app.documents import ContinentDocument, CountryDocument, EventDocument
+from django_opensearch_dsl import fields
 from django_opensearch_dsl.registries import registry
 
 
@@ -145,6 +146,22 @@ class IndexTestCase(SimpleTestCase):
         self.assertTrue(continent_document._index.exists())
         self.assertTrue(country_document._index.exists())
         self.assertTrue(event_document._index.exists())
+
+    def test_index_update(self):
+        self.assertFalse(ContinentDocument()._index.exists())
+        self.call_command("opensearch", "index", "create", ContinentDocument().Index.name, force=True)
+        self.assertTrue(ContinentDocument()._index.exists())
+
+        new_field_name = "new_field"
+        ContinentDocument._fields[new_field_name] = fields.KeywordField()
+        try:
+            mappings = ContinentDocument._index.get_mapping()
+            self.assertNotIn(new_field_name, mappings["continent"]["mappings"]["properties"].keys())
+            self.call_command("opensearch", "index", "update", ContinentDocument().Index.name, force=True)
+            mappings = ContinentDocument._index.get_mapping()
+            self.assertEqual({"type": "keyword"}, mappings["continent"]["mappings"]["properties"].get(new_field_name))
+        finally:
+            del ContinentDocument._fields[new_field_name]
 
     def test_unknown_index(self):
         with self.assertRaises(SystemExit):
