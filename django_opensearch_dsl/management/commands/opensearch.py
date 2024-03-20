@@ -113,6 +113,8 @@ class Command(BaseCommand):
                     index.create()
                 elif action == OpensearchAction.DELETE:
                     index.delete()
+                elif action == OpensearchAction.UPDATE:
+                    index.put_mapping(body=index.to_dict()["mappings"])
                 else:
                     try:
                         index.delete()
@@ -245,11 +247,17 @@ class Command(BaseCommand):
         subparser.add_argument(
             "action",
             type=str,
-            help="Whether you want to create, delete or rebuild the indices.",
+            help=(
+                "Whether you want to create, update, delete or rebuild the indices.\n"
+                "Update allow you to update your indices mappings if you modified them after creation. "
+                "This should be done prior to indexing new document with dynamic mapping (enabled by default), "
+                "a default mapping with probably the wrong type would be created for any new field."
+            ),
             choices=[
                 OpensearchAction.CREATE.value,
                 OpensearchAction.DELETE.value,
                 OpensearchAction.REBUILD.value,
+                OpensearchAction.UPDATE.value,
             ],
         )
         subparser.add_argument("--force", action="store_true", default=False, help="Do not ask for confirmation.")
