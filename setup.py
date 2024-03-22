@@ -16,7 +16,7 @@ CLASSIFIERS = [
     'Framework :: Django :: 3.2',
     'Framework :: Django :: 4.2',
     'Framework :: Django :: 5.0',
-    "Environment :: Web Environment,"
+    "Environment :: Web Environment",
     'Intended Audience :: Developers',
     'License :: OSI Approved :: Apache Software License',
     'Natural Language :: English',
