@@ -10,8 +10,16 @@ The `Django` subclass contains parameters related to Django's side of the docume
   into this list. See [Document Field Reference](fields.md) for how to manually define fields.
 * `queryset_pagination` (*optional*) - Size of the chunk when indexing,
   override [`OPENSEARCH_DSL_QUERYSET_PAGINATION`](settings.md#opensearch_dsl_queryset_pagination).
-* `related_models` (*optional*) - List of related Django models. Specifies a relation between models that allows for
-  index updating based on these defined relationships.
+* `ignore_signals` (*optional*) - If set to `True`, this Document will be ignored by the [auto-syncing](#autosync)
+  feature. Default to `False`.
+* `related_models` (*optional*) - List of related Django models. Any change made to models in this list will trigger a
+  re-indexation of the related instances of the model associated with this Document. See [auto-syncing](#autosync) for
+  more information.
+* `auto_refresh` (*optional*) - Whether to refresh the affected shards after performing the indexing operations. Default
+  is `False`. `True` makes the changes show up in search results immediately, but hurts cluster performance.
+  `"wait_for"` waits for a refresh. Requests take longer to return, but cluster performance doesn’t suffer. This
+  per-Document setting overrides [OPENSEARCH_DSL_AUTO_REFRESH](settings.md#opensearch_dsl_auto_refresh).
+
 
 ```python
 class Country(models.Model):
@@ -26,12 +34,10 @@ class CountryDocument(Document):
     class Django:
         model = Country
         queryset_pagination = 128
-        fields = [
-            'name',
-            'area',
-            'population',
-        ]
+        fields = ['name', 'area', 'population']
         related_models = []
+        ignore_signals = True
+        auto_refresh = True
 
     id = fields.LongField()
     continent = fields.ObjectField(properties={
@@ -217,3 +223,50 @@ mapped with probably the wrong type.
 
 To apply changes done to your `Document` class to an existing OpenSearch index, you must call the
 [`manage.py opensearch index update <index>`](management.md#index-subcommand) command.
+
+
+## Autosync
+
+This package provide an auto-syncing feature. It will automatically update the index when a model is
+created / saved / deleted.
+
+You can also update the index of related models by defining [`Document.Django.related_models`](document.md#django-subclass)
+and the method `get_instances_from_related(self, related)`. This method take an instance of a related model and
+should return the instances corresponding to the Document. For example, if you have a `Country` model with a `Continent`
+and multiple `City`, you can define the following Document:
+
+```python
+class ContinentInnerDocument(InnerDoc):
+    id = fields.LongField()
+    name = fields.KeywordField()
+    code = fields.KeywordField()
+
+class CityInnerDocument(InnerDoc):
+    id = fields.LongField()
+    name = fields.KeywordField()
+    postal_cod = fields.KeywordField()
+
+@registry.register_document
+class CountryDocument(Document):
+    class Django:
+        model = Country
+        fields = ['name', 'area', 'population']
+        related_models = [Continent, City]
+
+    id = fields.LongField()
+    continent = fields.ObjectField(doc_class=ContinentInnerDocument)
+    cities = fields.NestedField(doc_class=CityInnerDocument)
+    
+    def get_instances_from_related(self, related: Continent | City) -> List[Country]:
+        if isinstance(related, Continent):
+            return related.countries.all()
+        return [related.country]  # isinstance(related, City)
+```
+
+
+Since this feature uses Django's signals, it has the same limitation and this feature only works
+when the  `save()` or `delete()` methods of your models are called. It does not work with most
+bulk operation such as `queryset.bulk_create()`, `queryset.update()`, `queryset.delete()`...
+
+It is important to note that the autosync feature can have a significant impact on performance, especially used in
+conjunction with related models.
