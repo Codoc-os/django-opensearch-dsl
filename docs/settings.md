@@ -46,19 +46,34 @@ do not play well with this option.
 
 Default: `4096`
 
-Size of the chunk used when indexing data. Can be overriden by setting `queryset_pagination` inside `Document`'
+Size of the chunk used when indexing data. Can be overridden by setting `queryset_pagination` inside `Document`'
 s [`Django` subclass](document.md).
+
+
+## `OPENSEARCH_DSL_AUTOSYNC`
+
+Default: `True`
+
+Set to `False` to globally disable auto-syncing.
+
+See [Autosync](document.md#autosync) for more information.
+
+The autosync operations can be customized using [`OPENSEARCH_DSL_SIGNAL_PROCESSOR`](settings.md#opensearch_dsl_signal_processor)
+setting.
 
 ## `OPENSEARCH_DSL_SIGNAL_PROCESSOR`
 
-This (optional) setting controls what SignalProcessor class is used to handle Django’s signals and
-keep the indices up-to-date. Default to `django_opensearch_dsl.signals.RealTimeSignalProcessor`.
+Default: `django_opensearch_dsl.signals.RealTimeSignalProcessor`.
 
-Valid choices are:
+This (optional) setting controls what SignalProcessor class is used to handle Django’s signals and
+keep the indices up-to-date. While some builtin choices are provided, you can also define your own
+by subclassing `django_opensearch_dsl.signals.BaseSignalProcessor`.
+
+Builtin choices are:
 
 * `django_opensearch_dsl.signals.RealTimeSignalProcessor`
 
-Operation are processed synchronously as soon as the signal is emitted.
+Operations are processed synchronously as soon as the signal is emitted.
 
 * `django_opensearch_dsl.signals.CelerySignalProcessor`
 
