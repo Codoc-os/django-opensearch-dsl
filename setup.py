@@ -7,19 +7,19 @@ from setuptools import setup
 DIRNAME = os.path.dirname(__file__)
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
-    'Framework :: Django',
-    'Framework :: Django :: 3.2',
-    'Framework :: Django :: 4.0',
-    'Framework :: Django :: 4.1',
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: Apache Software License',
-    'Natural Language :: English',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Framework :: Django',
+    'Framework :: Django :: 3.2',
+    'Framework :: Django :: 4.2',
+    'Framework :: Django :: 5.0',
+    "Environment :: Web Environment,"
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: Apache Software License',
+    'Natural Language :: English',
 ]
 LONG_DESCRIPTION = (
     codecs.open(os.path.join(DIRNAME, 'README.md'), encoding='utf-8').read()
@@ -36,7 +36,7 @@ EXTRA_REQUIREMENTS = {
 
 setup(
     name='django-opensearch-dsl',
-    version='0.5.2',
+    version='0.6.0',
     description="""Wrapper around opensearch-py for django models""",
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',

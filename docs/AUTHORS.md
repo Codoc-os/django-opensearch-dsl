@@ -10,6 +10,7 @@
 * [Colin Seifer](https://github.com/Colin-Seifer)
 * [Jacob Kausler](https://github.com/jakekausler)
 * [ghkdxofla - Taelim Hwang (Limy)](https://github.com/ghkdxofla)
+* [Cédric Raud](https://github.com/cedricraud)
 
 ---
 

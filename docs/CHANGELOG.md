@@ -1,5 +1,16 @@
 # Changelog
 
+### 0.6.0 (2024-03-22)
+
+* Add `mananage.py opensearch index update` subcommand to update an existing index mappings ([#52](https://github.com/Codoc-os/django-opensearch-dsl/pull/52)).
+* Add `CelerySignalProcessor` as an alternative to `RealTimeSignalProcessor` to process signals asynchronously using Celery
+  ([#51](https://github.com/Codoc-os/django-opensearch-dsl/pull/51)).
+* Add `registry.get_models()` and `registry.__contains__()` methods ([#48](https://github.com/Codoc-os/django-opensearch-dsl/pull/48), Contributed by [ghkdxofla - Taelim Hwang (Limy)](https://github.com/ghkdxofla)).
+* When using the `opensearch` command, any error now displays the raw OpenSearch response ([#49](https://github.com/Codoc-os/django-opensearch-dsl/pull/49)).
+* Autosync and related model features are now [properly documented](https://django-opensearch-dsl.readthedocs.io/en/latest/document/#autosync) ([#53](https://github.com/Codoc-os/django-opensearch-dsl/pull/53)).
+* Update the test matrix to work with the latest supported version of Python, Django, and OpenSearch. Also, add `isort` and
+  `bandit` to CI ([#50](https://github.com/Codoc-os/django-opensearch-dsl/pull/50)).
+
 ### 0.5.2 (2024-01-11)
 
 * Add the missing parameter `field_value_to_ignore=None` to `django_opensearch_dsl.fields.ListField.get_value_from_instance`
