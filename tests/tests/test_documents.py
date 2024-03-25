@@ -340,6 +340,17 @@ class DocumentTestCase(TestCase):
                 settings.OPENSEARCH_DSL["dummy"]["hosts"],
             )
 
+    def test_model_instance_update_limit_fields(self):
+        doc = CarDocument()
+        car = Car()
+
+        with patch("django_opensearch_dsl.documents.bulk") as mock:
+            doc.update(car, "update", limit_fields=["price"])
+            self.assertEqual(
+                list(mock.call_args_list[0][1]["actions"])[0]["doc"],
+                {"price": car.price},
+            )
+
     def test_model_instance_iterable_update_with_pagination(self):
         class CarDocument2(Document):
             class Django:
