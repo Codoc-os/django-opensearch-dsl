@@ -125,7 +125,7 @@ jobs:
 
       - name: Run Opensearch in docker
         run: |
-          docker-compose up -d opensearch_test_${{ matrix.opensearch-version }}
+          docker compose up -d opensearch_test_${{ matrix.opensearch-version }}
           sleep 30
 
       - name: Install Tox and any other packages
