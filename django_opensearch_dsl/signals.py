@@ -85,9 +85,13 @@ else:
     def handle_save_task(app_label, model, pk):
         """Handle the update on the registry as a Celery task."""
         if app_label in apps.app_configs:
-            instance = apps.get_model(app_label, model).objects.get(pk=pk)
-            registry.update(instance)
-            registry.update_related(instance)
+            model_object = apps.get_model(app_label, model)
+            try:
+                instance = model_object.objects.get(pk=pk)
+                registry.update(instance)
+                registry.update_related(instance)
+            except model_object.DoesNotExist:
+                pass
 
     @shared_task()
     def handle_pre_delete_task(data):
