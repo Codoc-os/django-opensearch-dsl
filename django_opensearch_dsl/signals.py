@@ -1,10 +1,11 @@
 """Attach django-opensearch-dsl to Django's signals and cause things to index."""
 
 import abc
+from functools import partial
 
 from django.apps import apps
 from django.core.serializers import deserialize, serialize
-from django.db import models
+from django.db import models, transaction
 from django.dispatch import Signal
 
 from .apps import DODConfig
@@ -109,8 +110,21 @@ else:
         def handle_save(self, sender, instance, **kwargs):
             """Update the instance in model and associated model indices."""
             if instance.__class__ in registry.get_models():
-                handle_save_task.delay(instance._meta.app_label, instance.__class__.__name__, instance.pk)
+                transaction.on_commit(
+                    partial(
+                        handle_save_task.delay,
+                        app_label=instance._meta.app_label,
+                        model=instance.__class__.__name__,
+                        pk=instance.pk,
+                    )
+                )
 
         def handle_pre_delete(self, sender, instance, **kwargs):
             """Delete the instance from model and associated model indices."""
-            handle_pre_delete_task.delay(serialize("json", [instance], cls=DODConfig.signal_processor_serializer_class()))
+            handle_pre_delete_task.delay(
+                serialize(
+                    "json",
+                    [instance],
+                    cls=DODConfig.signal_processor_serializer_class(),
+                )
+            )
