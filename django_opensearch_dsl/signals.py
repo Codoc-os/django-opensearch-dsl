@@ -84,14 +84,13 @@ else:
     @shared_task()
     def handle_save_task(app_label, model, pk):
         """Handle the update on the registry as a Celery task."""
-        if app_label in apps.app_configs:
-            model_object = apps.get_model(app_label, model)
-            try:
-                instance = model_object.objects.get(pk=pk)
-                registry.update(instance)
-                registry.update_related(instance)
-            except model_object.DoesNotExist:
-                pass
+        model_object = apps.get_model(app_label, model)
+        try:
+            instance = model_object.objects.get(pk=pk)
+            registry.update(instance)
+            registry.update_related(instance)
+        except model_object.DoesNotExist:
+            pass
 
     @shared_task()
     def handle_pre_delete_task(data):
@@ -109,8 +108,9 @@ else:
 
         def handle_save(self, sender, instance, **kwargs):
             """Update the instance in model and associated model indices."""
-            handle_save_task(instance._meta.app_label, instance.__class__.__name__, instance.pk)
+            if instance.__class__ in registry.get_models():
+                handle_save_task.delay(instance._meta.app_label, instance.__class__.__name__, instance.pk)
 
         def handle_pre_delete(self, sender, instance, **kwargs):
             """Delete the instance from model and associated model indices."""
-            handle_pre_delete_task(serialize("json", [instance], cls=DODConfig.signal_processor_serializer_class()))
+            handle_pre_delete_task.delay(serialize("json", [instance], cls=DODConfig.signal_processor_serializer_class()))
