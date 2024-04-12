@@ -1,10 +1,11 @@
 """Attach django-opensearch-dsl to Django's signals and cause things to index."""
 
 import abc
+from functools import partial
 
 from django.apps import apps
 from django.core.serializers import deserialize, serialize
-from django.db import models
+from django.db import models, transaction
 from django.dispatch import Signal
 
 from .apps import DODConfig
@@ -36,6 +37,14 @@ class BaseSignalProcessor(abc.ABC):
     @abc.abstractmethod
     def handle_m2m_changed(self, sender, instance, action, **kwargs):
         """Handle changes in ManyToMany relations."""
+
+    def instance_requires_update(self, instance):
+        m1 = instance._meta.model in registry._models
+        m2 = instance.__class__.__base__ in registry._models
+        m3 = bool(list(registry._get_related_doc(instance)))
+        if m1 or m2 or m3:
+            return True
+        return False
 
     def setup(self):
         """Set up the SignalProcessor."""
@@ -84,9 +93,13 @@ else:
     @shared_task()
     def handle_save_task(app_label, model, pk):
         """Handle the update on the registry as a Celery task."""
-        instance = apps.get_model(app_label, model).objects.get(pk=pk)
-        registry.update(instance)
-        registry.update_related(instance)
+        model_object = apps.get_model(app_label, model)
+        try:
+            instance = model_object.objects.get(pk=pk)
+            registry.update(instance)
+            registry.update_related(instance)
+        except model_object.DoesNotExist:
+            pass
 
     @shared_task()
     def handle_pre_delete_task(data):
@@ -102,10 +115,27 @@ else:
         Celery.
         """
 
-        def handle_save(self, sender, instance, **kwargs):
-            """Update the instance in model and associated model indices."""
-            handle_save_task(instance._meta.app_label, instance.__class__.__name__, instance.pk)
+    def handle_save(self, sender, instance, **kwargs):
+        """Update the instance in model and associated model indices."""
 
-        def handle_pre_delete(self, sender, instance, **kwargs):
-            """Delete the instance from model and associated model indices."""
-            handle_pre_delete_task(serialize("json", [instance], cls=DODConfig.signal_processor_serializer_class()))
+        if self.instance_requires_update(instance):
+            transaction.on_commit(
+                partial(
+                    handle_save_task.delay,
+                    app_label=instance._meta.app_label,
+                    model=instance.__class__.__name__,
+                    pk=instance.pk,
+                )
+            )
+
+    def handle_pre_delete(self, sender, instance, **kwargs):
+        """Delete the instance from model and associated model indices."""
+
+        if self.instance_requires_update(instance):
+            handle_pre_delete_task.delay(
+                serialize(
+                    "json",
+                    [instance],
+                    cls=DODConfig.signal_processor_serializer_class(),
+                )
+            )
