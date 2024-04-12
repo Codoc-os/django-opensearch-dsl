@@ -39,6 +39,7 @@ class BaseSignalProcessor(abc.ABC):
         """Handle changes in ManyToMany relations."""
 
     def instance_requires_update(self, instance):
+        """ Checks if an instance is connected to a Document (directly or related) """
         m1 = instance._meta.model in registry._models
         m2 = instance.__class__.__base__ in registry._models
         m3 = bool(list(registry._get_related_doc(instance)))
