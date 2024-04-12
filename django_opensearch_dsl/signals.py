@@ -39,7 +39,7 @@ class BaseSignalProcessor(abc.ABC):
         """Handle changes in ManyToMany relations."""
 
     def instance_requires_update(self, instance):
-        """ Checks if an instance is connected to a Document (directly or related) """
+        """Check if an instance is connected to a Document (directly or related)."""
         m1 = instance._meta.model in registry._models
         m2 = instance.__class__.__base__ in registry._models
         m3 = bool(list(registry._get_related_doc(instance)))
@@ -118,7 +118,6 @@ else:
 
     def handle_save(self, sender, instance, **kwargs):
         """Update the instance in model and associated model indices."""
-
         if self.instance_requires_update(instance):
             transaction.on_commit(
                 partial(
@@ -131,7 +130,6 @@ else:
 
     def handle_pre_delete(self, sender, instance, **kwargs):
         """Delete the instance from model and associated model indices."""
-
         if self.instance_requires_update(instance):
             handle_pre_delete_task.delay(
                 serialize(
