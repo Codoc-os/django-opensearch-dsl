@@ -50,3 +50,4 @@ docs/_buildenv*
 
 *.sqlite3
 _autofixture*
+.vscode/settings.json
