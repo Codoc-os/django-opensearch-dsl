@@ -11,6 +11,8 @@
 * [Jacob Kausler](https://github.com/jakekausler)
 * [ghkdxofla - Taelim Hwang (Limy)](https://github.com/ghkdxofla)
 * [Cédric Raud](https://github.com/cedricraud)
+* [Jordan Hyatt](https://github.com/JordanHyatt)
+* [jlariza](https://github.com/jlariza)
 
 ---
 

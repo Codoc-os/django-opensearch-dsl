@@ -1,6 +1,14 @@
 # Changelog
 
-### 0.6.0 (2024-03-22)
+### 0.6.1 (2024-04-13)
+
+* Multiple fixes to `CelerySignalProcessor` ([#62](https://github.com/Codoc-os/django-opensearch-dsl/pull/63)),
+  Contributed by [Jordan Hyatt](https://github.com/JordanHyatt) and [jlariza](https://github.com/jlariza).
+  * Correctly use `.delay` when calling tasks.
+  * Only initiate tasks when needed by checking beforehand if an instance is connected to a Document (directly or related)
+  * The tasks will only be created on transaction commit.
+
+## 0.6.0 (2024-03-22)
 
 * Add `mananage.py opensearch index update` subcommand to update an existing index mappings ([#52](https://github.com/Codoc-os/django-opensearch-dsl/pull/52)).
 * Add `CelerySignalProcessor` as an alternative to `RealTimeSignalProcessor` to process signals asynchronously using Celery
