@@ -4,6 +4,7 @@
 
 * Fix `CelerySignalProcessor` previously using `RealTimeSignalProcessor`'s method due to wrong indentation ([#66](https://github.com/Codoc-os/django-opensearch-dsl/pull/66)),
   Contributed by [jlariza](https://github.com/jlariza).
+* `models.PositiveBigIntegerField` is now automatically mapped to `LongField` ([#67](https://github.com/Codoc-os/django-opensearch-dsl/pull/67)), Contributed by [jlariza](https://github.com/jlariza).
 
 ### 0.6.1 (2024-04-13)
 
