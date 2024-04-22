@@ -116,25 +116,25 @@ else:
         Celery.
         """
 
-    def handle_save(self, sender, instance, **kwargs):
-        """Update the instance in model and associated model indices."""
-        if self.instance_requires_update(instance):
-            transaction.on_commit(
-                partial(
-                    handle_save_task.delay,
-                    app_label=instance._meta.app_label,
-                    model=instance.__class__.__name__,
-                    pk=instance.pk,
+        def handle_save(self, sender, instance, **kwargs):
+            """Update the instance in model and associated model indices."""
+            if self.instance_requires_update(instance):
+                transaction.on_commit(
+                    partial(
+                        handle_save_task.delay,
+                        app_label=instance._meta.app_label,
+                        model=instance.__class__.__name__,
+                        pk=instance.pk,
+                    )
                 )
-            )
 
-    def handle_pre_delete(self, sender, instance, **kwargs):
-        """Delete the instance from model and associated model indices."""
-        if self.instance_requires_update(instance):
-            handle_pre_delete_task.delay(
-                serialize(
-                    "json",
-                    [instance],
-                    cls=DODConfig.signal_processor_serializer_class(),
+        def handle_pre_delete(self, sender, instance, **kwargs):
+            """Delete the instance from model and associated model indices."""
+            if self.instance_requires_update(instance):
+                handle_pre_delete_task.delay(
+                    serialize(
+                        "json",
+                        [instance],
+                        cls=DODConfig.signal_processor_serializer_class(),
+                    )
                 )
-            )
