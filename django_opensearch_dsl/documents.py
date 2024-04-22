@@ -33,6 +33,7 @@ model_field_class_to_field_class = {
     models.ImageField: fields.FileField,
     models.IntegerField: fields.IntegerField,
     models.NullBooleanField: fields.BooleanField,
+    models.PositiveBigIntegerField: fields.LongField,
     models.PositiveIntegerField: fields.IntegerField,
     models.PositiveSmallIntegerField: fields.ShortField,
     models.SlugField: fields.KeywordField,
@@ -60,10 +61,18 @@ class Document(DSLDocument):
     def search(cls, using=None, index=None):
         """Return a `Search` object parametrized with the index' information."""
         return Search(
-            using=cls._get_using(using), index=cls._default_index(index), doc_type=[cls], model=cls.django.model
+            using=cls._get_using(using),
+            index=cls._default_index(index),
+            doc_type=[cls],
+            model=cls.django.model,
         )
 
-    def get_queryset(self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None) -> QuerySet:
+    def get_queryset(
+        self,
+        filter_: Optional[Q] = None,
+        exclude: Optional[Q] = None,
+        count: int = None,
+    ) -> QuerySet:
         """Return the queryset that should be indexed by this doc type."""
         qs = self.django.model.objects.all()
 
@@ -144,7 +153,10 @@ class Document(DSLDocument):
                 if prep_func:
                     fn = prep_func
                 else:
-                    fn = partial(field.get_value_from_instance, field_value_to_ignore=self._related_instance_to_ignore)
+                    fn = partial(
+                        field.get_value_from_instance,
+                        field_value_to_ignore=self._related_instance_to_ignore,
+                    )
 
             preparers.append((name, field, fn))
 
@@ -233,4 +245,10 @@ class Document(DSLDocument):
         else:
             object_list = thing
 
-        return self._bulk(self._get_actions(object_list, action), *args, refresh=refresh, using=using, **kwargs)
+        return self._bulk(
+            self._get_actions(object_list, action),
+            *args,
+            refresh=refresh,
+            using=using,
+            **kwargs,
+        )
