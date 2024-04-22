@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.6.2 (2024-04-23)
+
+* Fix `CelerySignalProcessor` previously using `RealTimeSignalProcessor`'s method due to wrong indentation ([#66](https://github.com/Codoc-os/django-opensearch-dsl/pull/66)),
+  Contributed by [jlariza](https://github.com/jlariza).
+
 ### 0.6.1 (2024-04-13)
 
 * Multiple fixes to `CelerySignalProcessor` ([#62](https://github.com/Codoc-os/django-opensearch-dsl/pull/63)),
