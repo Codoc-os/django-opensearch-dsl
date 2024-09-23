@@ -90,6 +90,7 @@ class Document(DSLDocument):
         return f"{eta} {unit}"
 
     def _yield_objects(self, qs, action, verbose, stdout):
+        """Yield objects from the queryset in chunks."""
         chunk_size = self.django.queryset_pagination
         count = qs.count()
         model = self.django.model.__name__
@@ -126,6 +127,9 @@ class Document(DSLDocument):
         if self._order_indexing_queryset and not qs.query.is_ordered:
             qs = qs.order_by("pk")
         if batch_size:
+            # In order to avoid loading big querysets into memory or
+            # loading them in temporary tables in the database,
+            # we have the possibility to divide the queryset using batch_size.
             result = qs.aggregate(min_pk=Min("pk"), max_pk=Max("pk"))
             min_value = result["min_pk"]
             max_value = result["max_pk"] + 1
