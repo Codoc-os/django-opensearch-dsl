@@ -154,6 +154,7 @@ class Command(BaseCommand):
         refresh,
         missing,
         database,
+        batch_size,
         **options,
     ):  # noqa
         """Manage the creation and deletion of indices."""
@@ -436,6 +437,13 @@ class Command(BaseCommand):
             action="store_true",
             default=False,
             help="When used with 'index' action, only index documents not indexed yet.",
+        )
+        subparser.add_argument(
+            "-b",
+            "--batch-size",
+            type=int,
+            default=None,
+            help="Specify the batch size for processing documents.",
         )
 
         self.usage = parser.format_usage()

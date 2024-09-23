@@ -50,6 +50,7 @@ class DocumentRegistry:
                 "ignore_signals": getattr(django_meta, "ignore_signals", False),
                 "auto_refresh": getattr(django_meta, "auto_refresh", DODConfig.auto_refresh_enabled()),
                 "related_models": getattr(django_meta, "related_models", []),
+                "order_indexing_queryset": getattr(django_meta, "order_indexing_queryset", True),
             }
         )
         if not django_attr.model:  # pragma: no cover
