@@ -6,7 +6,7 @@ from functools import partial
 from typing import Iterable, Optional
 
 from django.db import models
-from django.db.models import Q, QuerySet
+from django.db.models import Q, QuerySet, Max, Min
 from opensearchpy.helpers import bulk, parallel_bulk
 from opensearchpy.helpers.document import Document as DSLDocument
 
