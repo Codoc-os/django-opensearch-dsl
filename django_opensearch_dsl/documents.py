@@ -48,6 +48,7 @@ class Document(DSLDocument):
     """Allow the definition of Opensearch' index using Django `Model`."""
 
     _prepared_fields = []
+    _order_indexing_queryset: bool = True
 
     def __init__(self, related_instance_to_ignore=None, **kwargs):
         super(Document, self).__init__(**kwargs)
@@ -88,20 +89,8 @@ class Document(DSLDocument):
             unit = "mins"
         return f"{eta} {unit}"
 
-    def get_indexing_queryset(
-        self,
-        db_alias: str = None,
-        verbose: bool = False,
-        filter_: Optional[Q] = None,
-        exclude: Optional[Q] = None,
-        count: int = None,
-        action: OpensearchAction = OpensearchAction.INDEX,
-        stdout: io.FileIO = sys.stdout,
-    ) -> Iterable:
-        """Divide the queryset into chunks."""
+    def _yield_objects(self, qs, action, verbose, stdout):
         chunk_size = self.django.queryset_pagination
-        qs = self.get_queryset(db_alias=db_alias, filter_=filter_, exclude=exclude, count=count)
-        qs = qs.order_by("pk") if not qs.query.is_sliced else qs
         count = qs.count()
         model = self.django.model.__name__
         action = action.present_participle.title()
@@ -115,14 +104,38 @@ class Document(DSLDocument):
             if verbose:
                 stdout.write(f"{action} {model}: {round(i / count * 100)}% ({self._eta(start, done, count)})\r")
 
-            for obj in qs[i : i + chunk_size]:
+            for obj in qs.iterator(chunk_size=chunk_size):
                 done += 1
+                if done % chunk_size == 0:
+                    stdout.write(f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r")
                 yield obj
 
-            i = min(i + chunk_size, count)
-
-        if verbose:
-            stdout.write(f"{action} {count} {model}: OK          \n")
+    def get_indexing_queryset(
+        self,
+        db_alias: str = None,
+        verbose: bool = False,
+        filter_: Optional[Q] = None,
+        exclude: Optional[Q] = None,
+        count: int = None,
+        action: OpensearchAction = OpensearchAction.INDEX,
+        stdout: io.FileIO = sys.stdout,
+        batch_size: int = None,
+    ) -> Iterable:
+        """Divide the queryset into chunks."""
+        qs = self.get_queryset(db_alias=db_alias, filter_=filter_, exclude=exclude, count=count)
+        if self._order_indexing_queryset and not qs.query.is_ordered:
+            qs = qs.order_by("pk")
+        if batch_size:
+            result = qs.aggregate(min_pk=Min("pk"), max_pk=Max("pk"))
+            min_value = result["min_pk"]
+            max_value = result["max_pk"] + 1
+            for pk_offset in range(min_value, max_value, batch_size):
+                max_pk = min(pk_offset + batch_size, max_value)
+                batch_qs = qs.filter(pk__gte=pk_offset, pk__lt=max_pk)
+                stdout.write(f"Processing batch with pk from {pk_offset} to {max_pk - 1}\n")
+                yield from self._yield_objects(batch_qs, action, verbose, stdout)
+        else:
+            yield from self._yield_objects(qs, action, verbose, stdout)
 
     def init_prepare(self):
         """Initialise the data model preparers once here.
