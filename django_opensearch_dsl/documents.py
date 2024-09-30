@@ -6,7 +6,7 @@ from functools import partial
 from typing import Iterable, Optional
 
 from django.db import models
-from django.db.models import Q, QuerySet, Max, Min
+from django.db.models import Max, Min, Q, QuerySet
 from opensearchpy.helpers import bulk, parallel_bulk
 from opensearchpy.helpers.document import Document as DSLDocument
 
@@ -48,7 +48,6 @@ class Document(DSLDocument):
     """Allow the definition of Opensearch' index using Django `Model`."""
 
     _prepared_fields = []
-    _order_indexing_queryset: bool = True
 
     def __init__(self, related_instance_to_ignore=None, **kwargs):
         super(Document, self).__init__(**kwargs)
@@ -89,28 +88,6 @@ class Document(DSLDocument):
             unit = "mins"
         return f"{eta} {unit}"
 
-    def _yield_objects(self, qs, action, verbose, stdout):
-        """Yield objects from the queryset in chunks."""
-        chunk_size = self.django.queryset_pagination
-        count = qs.count()
-        model = self.django.model.__name__
-        action = action.present_participle.title()
-
-        i = 0
-        done = 0
-        start = time.time()
-        if verbose:
-            stdout.write(f"{action} {model}: 0% ({self._eta(start, done, count)})\r")
-        while done < count:
-            if verbose:
-                stdout.write(f"{action} {model}: {round(i / count * 100)}% ({self._eta(start, done, count)})\r")
-
-            for obj in qs.iterator(chunk_size=chunk_size):
-                done += 1
-                if done % chunk_size == 0:
-                    stdout.write(f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r")
-                yield obj
-
     def get_indexing_queryset(
         self,
         db_alias: str = None,
@@ -120,26 +97,38 @@ class Document(DSLDocument):
         count: int = None,
         action: OpensearchAction = OpensearchAction.INDEX,
         stdout: io.FileIO = sys.stdout,
-        batch_size: int = None,
     ) -> Iterable:
         """Divide the queryset into chunks."""
+        chunk_size = self.django.queryset_pagination
         qs = self.get_queryset(db_alias=db_alias, filter_=filter_, exclude=exclude, count=count)
+        count = qs.count()
+        model = self.django.model.__name__
+        action = action.present_participle.title()
+
         if self._order_indexing_queryset and not qs.query.is_ordered:
             qs = qs.order_by("pk")
-        if batch_size:
-            # In order to avoid loading big querysets into memory or
-            # loading them in temporary tables in the database,
-            # we have the possibility to divide the queryset using batch_size.
-            result = qs.aggregate(min_pk=Min("pk"), max_pk=Max("pk"))
-            min_value = result["min_pk"]
-            max_value = result["max_pk"] + 1
-            for pk_offset in range(min_value, max_value, batch_size):
-                max_pk = min(pk_offset + batch_size, max_value)
-                batch_qs = qs.filter(pk__gte=pk_offset, pk__lt=max_pk)
-                stdout.write(f"Processing batch with pk from {pk_offset} to {max_pk - 1}\n")
-                yield from self._yield_objects(batch_qs, action, verbose, stdout)
-        else:
-            yield from self._yield_objects(qs, action, verbose, stdout)
+
+        # In order to avoid loading big querysets into memory or
+        # loading them in temporary tables in the database,
+        # we have the possibility to divide the queryset using batch_size.
+        result = qs.aggregate(min_pk=Min("pk"), max_pk=Max("pk"))
+        min_value = result["min_pk"]
+        max_value = result["max_pk"] + 1
+
+        done = 0
+        start = time.time()
+        if verbose:
+            stdout.write(f"{action} {model}: 0% ({self._eta(start, done, count)})\r")
+
+        for pk_offset in range(min_value, max_value, chunk_size):
+            max_pk = min(pk_offset + self.django.queryset_pagination, max_value)
+            batch_qs = qs.filter(pk__gte=pk_offset, pk__lt=max_pk)
+            stdout.write(f"Processing batch with pk from {pk_offset} to {max_pk - 1}\n")
+            for obj in batch_qs:
+                done += 1
+                if done % chunk_size == 0:
+                    stdout.write(f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r")
+                yield obj
 
     def init_prepare(self):
         """Initialise the data model preparers once here.

@@ -261,9 +261,7 @@ class Command(BaseCommand):
         if objects:
             for model, kwargs in zip(selected_os_models, kwargs_list):
                 document = model()  # noqa
-                qs = document.get_indexing_queryset(
-                    stdout=self.stdout._out, verbose=verbosity, action=action, batch_size=batch_size, **kwargs
-                )
+                qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
                 success, errors = document.update(
                     qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
                 )
@@ -287,9 +285,7 @@ class Command(BaseCommand):
         else:
             for index, kwargs in zip(indices, kwargs_list):
                 document = index._doc_types[0]()  # noqa
-                qs = document.get_indexing_queryset(
-                    stdout=self.stdout._out, verbose=verbosity, action=action, batch_size=batch_size, **kwargs
-                )
+                qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
                 success, errors = document.update(
                     qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
                 )
