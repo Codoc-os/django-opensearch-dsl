@@ -116,14 +116,17 @@ class Document(DSLDocument):
         max_value = result["max_pk"] + 1
 
         done = 0
+        current_batch = 0
+        total_batches = (max_value - min_value + chunk_size - 1) // chunk_size
         start = time.time()
         if verbose:
             stdout.write(f"{action} {model}: 0% ({self._eta(start, done, count)})\r")
 
         for pk_offset in range(min_value, max_value, chunk_size):
+            current_batch += 1
             max_pk = min(pk_offset + self.django.queryset_pagination, max_value)
             batch_qs = qs.filter(pk__gte=pk_offset, pk__lt=max_pk)
-            stdout.write(f"Processing batch with pk from {pk_offset} to {max_pk - 1}\n")
+            stdout.write(f"Processing batch {current_batch}/{total_batches} with pk from {pk_offset} to {max_pk - 1}\n")
             for obj in batch_qs:
                 done += 1
                 if done % chunk_size == 0:
