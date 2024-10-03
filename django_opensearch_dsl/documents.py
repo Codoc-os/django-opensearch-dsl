@@ -97,9 +97,10 @@ class Document(DSLDocument):
         count: int = None,
         action: OpensearchAction = OpensearchAction.INDEX,
         stdout: io.FileIO = sys.stdout,
+        batch_size: int = None,
     ) -> Iterable:
         """Divide the queryset into chunks."""
-        chunk_size = self.django.queryset_pagination
+        chunk_size = batch_size or self.django.queryset_pagination
         qs = self.get_queryset(db_alias=db_alias, filter_=filter_, exclude=exclude, count=count)
         count = qs.count()
         model = self.django.model.__name__
@@ -112,22 +113,29 @@ class Document(DSLDocument):
         # loading them in temporary tables in the database,
         # we have the possibility to divide the queryset using batch_size.
         result = qs.aggregate(min_pk=Min("pk"), max_pk=Max("pk"))
-        min_value = result["min_pk"]
-        max_value = result["max_pk"] + 1
-
         done = 0
-        current_batch = 0
-        total_batches = (max_value - min_value + chunk_size - 1) // chunk_size
         start = time.time()
         if verbose:
             stdout.write(f"{action} {model}: 0% ({self._eta(start, done, count)})\r")
 
-        for pk_offset in range(min_value, max_value, chunk_size):
-            current_batch += 1
-            max_pk = min(pk_offset + self.django.queryset_pagination, max_value)
-            batch_qs = qs.filter(pk__gte=pk_offset, pk__lt=max_pk)
-            stdout.write(f"Processing batch {current_batch}/{total_batches} with pk from {pk_offset} to {max_pk - 1}\n")
-            for obj in batch_qs:
+        if result["min_pk"] is not None and result["max_pk"] is not None:
+            min_value = result["min_pk"]
+            max_value = result["max_pk"] + 1
+
+            current_batch = 0
+            total_batches = (max_value - min_value + chunk_size - 1) // chunk_size
+            for pk_offset in range(min_value, max_value, chunk_size):
+                current_batch += 1
+                max_pk = min(pk_offset + self.django.queryset_pagination, max_value)
+                batch_qs = qs.filter(pk__gte=pk_offset, pk__lt=max_pk)
+                stdout.write(f"Processing batch {current_batch}/{total_batches} with pk from {pk_offset} to {max_pk - 1}\n")
+                for obj in batch_qs:
+                    done += 1
+                    if done % chunk_size == 0:
+                        stdout.write(f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r")
+                    yield obj
+        else:
+            for obj in qs.iterator(chunk_size=chunk_size):
                 done += 1
                 if done % chunk_size == 0:
                     stdout.write(f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r")
