@@ -97,9 +97,10 @@ class Document(DSLDocument):
         count: int = None,
         action: OpensearchAction = OpensearchAction.INDEX,
         stdout: io.FileIO = sys.stdout,
+        batch_size: int = None,
     ) -> Iterable:
         """Divide the queryset into chunks."""
-        chunk_size = self.django.queryset_pagination
+        chunk_size = batch_size or self.django.queryset_pagination
         qs = self.get_queryset(db_alias=db_alias, filter_=filter_, exclude=exclude, count=count)
         count = qs.count()
         model = self.django.model.__name__
