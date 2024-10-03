@@ -105,7 +105,7 @@ class Document(DSLDocument):
         model = self.django.model.__name__
         action = action.present_participle.title()
 
-        if self.django.order_indexing_queryset and not qs.query.is_ordered:
+        if self.django.order_indexing_queryset and hasattr(qs.query, "is_ordered") and not qs.query.is_ordered:
             qs = qs.order_by("pk")
 
         # In order to avoid loading big querysets into memory or
