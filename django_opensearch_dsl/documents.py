@@ -128,6 +128,9 @@ class Document(DSLDocument):
                 current_batch += 1
                 max_pk = min(pk_offset + chunk_size, max_value)
                 batch_qs = qs.filter(pk__gte=pk_offset, pk__lt=max_pk)
+                stdout.write(
+                    f"Processing batch {current_batch}/{total_batches} with pk " f"from {pk_offset} to {max_pk - 1}\n"
+                )
                 for obj in batch_qs:
                     done += 1
                     if done % chunk_size == 0:
