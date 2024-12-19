@@ -84,11 +84,11 @@ def manage_index(
                 index.create()
         except opensearchpy.exceptions.TransportError as e:
             if verbosity or not ignore_error:
-                error = self.style.ERROR(f"Error: {e.error} - {e.info}")
+                error = style.ERROR(f"Error: {e.error} - {e.info}")
                 stderr.write(f"{pp} index '{index._name}'...\n{error}")  # noqa
             if not ignore_error:
                 stderr.write("exiting...")
                 exit(1)
         else:
             if verbosity:
-                stdout.write(f"{pp} index '{index._name}'... {self.style.SUCCESS('OK')}")  # noqa
+                stdout.write(f"{pp} index '{index._name}'... {style.SUCCESS('OK')}")  # noqa

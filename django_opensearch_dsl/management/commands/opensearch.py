@@ -1,18 +1,13 @@
 import argparse
 import functools
 import operator
-import os
 import sys
 from argparse import ArgumentParser
 from collections import defaultdict
 from typing import Any, Callable
 
-import opensearchpy
-from django.conf import settings
 from django.core.exceptions import FieldError
 from django.core.management import BaseCommand
-from django.core.management.base import OutputWrapper
-from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Q
 
 from django_opensearch_dsl.registries import registry
@@ -65,6 +60,11 @@ class Command(BaseCommand):
         for app, indices in result.items():
             self.stdout.write(self.style.MIGRATE_LABEL(app))
             self.stdout.write("\n".join(indices))
+
+    def _manage_index(self, action, indices, force, verbosity, ignore_error, **options):  # noqa
+        """Manage the creation and deletion of indices."""
+        manage_index(action, indices, force, ignore_error, verbosity,
+                     stderr=self.stderr, stdout=self.stdout, style=self.style)
 
     def _manage_document(
         self,
@@ -269,7 +269,7 @@ class Command(BaseCommand):
             help="Manage the creation an deletion of indices.",
             description="Manage the creation an deletion of indices.",
         )
-        subparser.set_defaults(func=manage_index)
+        subparser.set_defaults(func=self._manage_index)
         subparser.add_argument(
             "action",
             type=str,
