@@ -17,6 +17,7 @@ from django.db.models import Q
 
 from django_opensearch_dsl.registries import registry
 
+from ...utils import manage_index
 from ..enums import OpensearchAction
 from ..types import parse
 
@@ -64,81 +65,6 @@ class Command(BaseCommand):
         for app, indices in result.items():
             self.stdout.write(self.style.MIGRATE_LABEL(app))
             self.stdout.write("\n".join(indices))
-
-    def _manage_index(self, action, indices, force, verbosity, ignore_error, **options):  # noqa
-        """Manage the creation and deletion of indices."""
-        action = OpensearchAction(action)
-        known = registry.get_indices()
-
-        # Filter indices
-        if indices:
-            # Ensure every given indices exists
-            known_name = [i._name for i in known]  # noqa
-            unknown = set(indices) - set(known_name)
-            if unknown:
-                self.stderr.write(f"Unknown indices '{list(unknown)}', choices are: '{known_name}'")
-                exit(1)
-
-            # Only keep given indices
-            indices = list(filter(lambda i: i._name in indices, known))  # noqa
-        else:
-            indices = known
-
-        # Display expected action
-        if verbosity or not force:
-            self.stdout.write(f"The following indices will be {action.past}:")
-            for index in indices:
-                self.stdout.write(f"\t- {index._name}.")  # noqa
-            self.stdout.write("")
-
-        # Ask for confirmation to continue
-        if not force:  # pragma: no cover
-            while True:
-                p = input("Continue ? [y]es [n]o : ")
-                if p.lower() in ["yes", "y"]:
-                    self.stdout.write("")
-                    break
-                elif p.lower() in ["no", "n"]:
-                    exit(1)
-
-        pp = action.present_participle.title()
-        for index in indices:
-            if verbosity:
-                self.stdout.write(
-                    f"{pp} index '{index._name}'...\r",
-                    ending="",
-                )  # noqa
-                self.stdout.flush()
-            try:
-                # If current index depends on many different models, add them to
-                # index._doc_types before indexing to make sure all mappings of different models
-                # are taken into account.
-                index_models = registry.get_indices_raw().get(index, None)
-                for model in list(index_models):
-                    index._doc_types.append(model)
-
-                if action == OpensearchAction.CREATE:
-                    index.create()
-                elif action == OpensearchAction.DELETE:
-                    index.delete()
-                elif action == OpensearchAction.UPDATE:
-                    index.put_mapping(body=index.to_dict()["mappings"])
-                else:
-                    try:
-                        index.delete()
-                    except opensearchpy.exceptions.NotFoundError:
-                        pass
-                    index.create()
-            except opensearchpy.exceptions.TransportError as e:
-                if verbosity or not ignore_error:
-                    error = self.style.ERROR(f"Error: {e.error} - {e.info}")
-                    self.stderr.write(f"{pp} index '{index._name}'...\n{error}")  # noqa
-                if not ignore_error:
-                    self.stderr.write("exiting...")
-                    exit(1)
-            else:
-                if verbosity:
-                    self.stdout.write(f"{pp} index '{index._name}'... {self.style.SUCCESS('OK')}")  # noqa
 
     def _manage_document(
         self,
@@ -263,7 +189,12 @@ class Command(BaseCommand):
             for model, kwargs in zip(selected_os_models, kwargs_list):
                 document = model()  # noqa
                 qs = document.get_indexing_queryset(
-                    stdout=self.stdout._out, verbose=verbosity, action=action, batch_size=batch_size, batch_type=batch_type, **kwargs
+                    stdout=self.stdout._out,
+                    verbose=verbosity,
+                    action=action,
+                    batch_size=batch_size,
+                    batch_type=batch_type,
+                    **kwargs,
                 )
                 success, errors = document.update(
                     qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
@@ -289,7 +220,12 @@ class Command(BaseCommand):
             for index, kwargs in zip(indices, kwargs_list):
                 document = index._doc_types[0]()  # noqa
                 qs = document.get_indexing_queryset(
-                    stdout=self.stdout._out, verbose=verbosity, action=action, batch_size=batch_size, batch_type=batch_type, **kwargs
+                    stdout=self.stdout._out,
+                    verbose=verbosity,
+                    action=action,
+                    batch_size=batch_size,
+                    batch_type=batch_type,
+                    **kwargs,
                 )
                 success, errors = document.update(
                     qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
@@ -333,7 +269,7 @@ class Command(BaseCommand):
             help="Manage the creation an deletion of indices.",
             description="Manage the creation an deletion of indices.",
         )
-        subparser.set_defaults(func=self._manage_index)
+        subparser.set_defaults(func=manage_index)
         subparser.add_argument(
             "action",
             type=str,
