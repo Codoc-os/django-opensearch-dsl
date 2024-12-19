@@ -20,6 +20,15 @@ def manage_index(
     style=color_style(),
 ):  # noqa
     """Manage the creation and deletion of indices."""
+    choices = [
+        OpensearchAction.CREATE.value,
+        OpensearchAction.DELETE.value,
+        OpensearchAction.REBUILD.value,
+        OpensearchAction.UPDATE.value,
+    ]
+    if action not in choices:
+        raise ValueError(f"Invalid action '{action}'. Valid actions are: {', '.join(choices)}")
+
     action = OpensearchAction(action)
     known = registry.get_indices()
 

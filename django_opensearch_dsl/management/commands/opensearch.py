@@ -63,8 +63,9 @@ class Command(BaseCommand):
 
     def _manage_index(self, action, indices, force, verbosity, ignore_error, **options):  # noqa
         """Manage the creation and deletion of indices."""
-        manage_index(action, indices, force, ignore_error, verbosity,
-                     stderr=self.stderr, stdout=self.stdout, style=self.style)
+        manage_index(
+            action, indices, force, ignore_error, verbosity, stderr=self.stderr, stdout=self.stdout, style=self.style
+        )
 
     def _manage_document(
         self,
