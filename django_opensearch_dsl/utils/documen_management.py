@@ -94,7 +94,7 @@ def manage_document(
                 all_os_models.append(model)
 
         for os_model in all_os_models:
-            if os_model.django.model in django_models and os_model.Index.name in list(i._name for i in indices):
+            if os_model.django.model in django_models and os_model._index._name in list(i._name for i in indices):
                 selected_os_models.append(os_model)
 
         # Handle --missing
