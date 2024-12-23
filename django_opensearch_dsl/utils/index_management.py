@@ -6,7 +6,7 @@ from django.core.management.base import OutputWrapper
 from django.core.management.color import color_style
 
 from django_opensearch_dsl.management.enums import OpensearchAction
-from django_opensearch_dsl.registries import registry
+from django_opensearch_dsl.registries import registry as default_registry
 
 
 def manage_index(
@@ -18,6 +18,7 @@ def manage_index(
     stderr=OutputWrapper(sys.stderr),
     stdout=OutputWrapper(sys.stdout),
     style=color_style(),
+    registry=default_registry,
 ):  # noqa
     """Manage the creation and deletion of indices."""
     choices = [
