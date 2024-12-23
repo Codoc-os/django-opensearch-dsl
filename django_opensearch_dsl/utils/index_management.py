@@ -19,6 +19,7 @@ def manage_index(
     stdout=OutputWrapper(sys.stdout),
     style=color_style(),
     registry=default_registry,
+    using: str = None,
 ):  # noqa
     """Manage the creation and deletion of indices."""
     choices = [
@@ -81,17 +82,17 @@ def manage_index(
                 index._doc_types.append(model)
 
             if action == OpensearchAction.CREATE:
-                index.create()
+                index.create(using=using)
             elif action == OpensearchAction.DELETE:
-                index.delete()
+                index.delete(using=using)
             elif action == OpensearchAction.UPDATE:
-                index.put_mapping(body=index.to_dict()["mappings"])
+                index.put_mapping(body=index.to_dict()["mappings"], using=using)
             else:
                 try:
-                    index.delete()
+                    index.delete(using=using)
                 except opensearchpy.exceptions.NotFoundError:
                     pass
-                index.create()
+                index.create(using=using)
         except opensearchpy.exceptions.TransportError as e:
             if verbosity or not ignore_error:
                 error = style.ERROR(f"Error: {e.error} - {e.info}")

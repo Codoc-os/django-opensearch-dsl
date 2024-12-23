@@ -74,7 +74,7 @@ def manage_document(
         indices = known
 
     # Ensure every indices needed are created
-    not_created = [i._name for i in indices if not i.exists()]  # noqa
+    not_created = [i._name for i in indices if not i.exists(using=using)]  # noqa
     if not_created:
         stderr.write(f"The following indices are not created : {not_created}")
         stderr.write("Use 'python3 manage.py opensearch list' to list indices' state.")
