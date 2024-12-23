@@ -36,6 +36,7 @@ def manage_document(
     stdout=OutputWrapper(sys.stdout),
     style=color_style(),
     registry=default_registry,
+    using: str = None,
 ):  # noqa
     """Manage the creation and deletion of indices."""
     choices = [OpensearchAction.INDEX.value, OpensearchAction.DELETE.value, OpensearchAction.UPDATE.value]
@@ -154,7 +155,7 @@ def manage_document(
                 **kwargs,
             )
             success, errors = document.update(
-                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
+                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False, using=using
             )
 
             success_str = style.SUCCESS(success) if success else success
@@ -185,7 +186,7 @@ def manage_document(
                 **kwargs,
             )
             success, errors = document.update(
-                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
+                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False, using=using
             )
 
             success_str = style.SUCCESS(success) if success else success
