@@ -1,19 +1,15 @@
-import argparse
 import functools
 import operator
 import sys
-from argparse import ArgumentParser
 from collections import defaultdict
-from typing import Any, Callable, List, Tuple
+from typing import Any, List, Tuple
 
 from django.core.exceptions import FieldError
-from django.core.management import BaseCommand
 from django.core.management.base import OutputWrapper
 from django.core.management.color import color_style
 from django.db.models import Q
 
 from django_opensearch_dsl.management.enums import OpensearchAction
-from django_opensearch_dsl.management.types import parse
 from django_opensearch_dsl.registries import registry as default_registry
 
 
@@ -37,6 +33,7 @@ def manage_document(
     style=color_style(),
     registry=default_registry,
     using: str = None,
+    db_alias: str = None,
 ):  # noqa
     """Manage the creation and deletion of indices."""
     choices = [OpensearchAction.INDEX.value, OpensearchAction.DELETE.value, OpensearchAction.UPDATE.value]
@@ -103,7 +100,7 @@ def manage_document(
         for model in selected_os_models:
             try:
                 kwargs_list.append({"filter_": filter_, "exclude": exclude_, "count": count})
-                qs = model().get_queryset(filter_=filter_, exclude=exclude_, count=count).count()
+                qs = model().get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=db_alias).count()
             except FieldError as e:
                 stderr.write(f"Error while filtering on '{model.django.model.__name__}':\n{e}'")  # noqa
                 exit(1)
@@ -120,7 +117,7 @@ def manage_document(
             document = index._doc_types[0]()  # noqa
             try:
                 kwargs_list.append({"db_alias": database, "filter_": filter_, "exclude": exclude_, "count": count})
-                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count).count()
+                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=db_alias).count()
             except FieldError as e:
                 model = index._doc_types[0].django.model.__name__  # noqa
                 stderr.write(f"Error while filtering on '{model}' (from index '{index._name}'):\n{e}'")  # noqa
