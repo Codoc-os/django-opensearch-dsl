@@ -33,7 +33,6 @@ def manage_document(
     style=color_style(),
     registry=default_registry,
     using: str = None,
-    db_alias: str = None,
 ):  # noqa
     """Manage the creation and deletion of indices."""
     choices = [OpensearchAction.INDEX.value, OpensearchAction.DELETE.value, OpensearchAction.UPDATE.value]
@@ -99,8 +98,8 @@ def manage_document(
         exclude_ = exclude
         for model in selected_os_models:
             try:
-                kwargs_list.append({"filter_": filter_, "exclude": exclude_, "count": count})
-                qs = model().get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=db_alias).count()
+                kwargs_list.append({"db_alias": database, "filter_": filter_, "exclude": exclude_, "count": count})
+                qs = model().get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=database).count()
             except FieldError as e:
                 stderr.write(f"Error while filtering on '{model.django.model.__name__}':\n{e}'")  # noqa
                 exit(1)
@@ -117,7 +116,7 @@ def manage_document(
             document = index._doc_types[0]()  # noqa
             try:
                 kwargs_list.append({"db_alias": database, "filter_": filter_, "exclude": exclude_, "count": count})
-                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=db_alias).count()
+                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=database).count()
             except FieldError as e:
                 model = index._doc_types[0].django.model.__name__  # noqa
                 stderr.write(f"Error while filtering on '{model}' (from index '{index._name}'):\n{e}'")  # noqa
