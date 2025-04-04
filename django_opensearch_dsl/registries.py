@@ -1,5 +1,6 @@
 from collections import defaultdict
 from copy import deepcopy
+from itertools import chain
 
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db.models import Model
@@ -160,6 +161,14 @@ class DocumentRegistry:
         `Document'`s `ignore_signals` is `False`.
         """
         self.update(instance, action="delete", **kwargs)
+
+    def get_documents(self, models=None):
+        """Get all documents in the registry or the documents for a list of models."""
+        if models is not None:
+            docs_iter = (self._models[model] for model in models if model in self._models)
+        else:
+            docs_iter = self._models.values()
+        return set(chain.from_iterable(docs_iter))
 
     def get_models(self):
         """Get all models in the registry."""

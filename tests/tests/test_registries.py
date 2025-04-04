@@ -57,6 +57,14 @@ class DocumentRegistryTestCase(WithFixturesMixin, TestCase):
         ModelC = Mock()
         self.assertFalse(self.registry.get_indices([ModelC]))
 
+    def test_get_documents(self):
+        docs = {self.doc_a1, self.doc_a2, self.doc_b1, self.doc_c1, self.doc_d1, self.doc_e1}
+        self.assertEqual(self.registry.get_documents(), docs)
+
+    def test_get_documents_by_models(self):
+        docs = {self.doc_a1, self.doc_a2, self.doc_b1}
+        self.assertEqual(self.registry.get_documents(models=[self.ModelA, self.ModelB]), docs)
+
     def test_get_models(self):
         self.assertEqual(self.registry.get_models(), {self.ModelA, self.ModelB, self.ModelC, self.ModelD, self.ModelE})
 
