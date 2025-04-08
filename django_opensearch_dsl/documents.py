@@ -116,7 +116,7 @@ class Document(DSLDocument):
         if batch_type == "pk_filters":
             pks = qs.aggregate(min=Min("pk"), max=Max("pk"))
             total_batches = (pks["max"] - pks["min"]) // chunk_size
-            for batch_number, offset in enumerate(range(pks["min"], pks["max"], chunk_size), start=1):
+            for batch_number, offset in enumerate(range(pks["min"], pks["max"] + 1, chunk_size), start=1):
                 batch_qs = list(copy.deepcopy(qs.filter(pk__gte=offset, pk__lt=offset + chunk_size)))
                 stdout.write(f"Processing batch {batch_number}/{total_batches}: \n")
                 for obj in batch_qs:
