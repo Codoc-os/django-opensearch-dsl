@@ -5,7 +5,7 @@ Django Opensearch DSL
 [![Documentation Status](https://readthedocs.org/projects/django-opensearch-dsl/badge/?version=latest)](https://django-opensearch-dsl.readthedocs.io/en/latest/?badge=latest)
 ![Tests](https://github.com/Codoc-os/django-opensearch-dsl/workflows/Tests/badge.svg)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-brightgreen.svg)](#)
-[![Django 3.2+](https://img.shields.io/badge/Django-3.2+-brightgreen.svg)](#)
+[![Django 4.2+](https://img.shields.io/badge/Django-4.2+-brightgreen.svg)](#)
 [![OpenSearch 1.3+, 2.7+](https://img.shields.io/badge/OpenSearch-1.3+-brightgreen.svg)](#)
 [![License Apache 2](https://img.shields.io/badge/license-Apache%202-brightgreen.svg)](https://github.com/Codoc-os/django-opensearch-dsl/blob/master/LICENSE)
 [![codecov](https://codecov.io/gh/Codoc-os/django-opensearch-dsl/branch/master/graph/badge.svg)](https://codecov.io/gh/Codoc-os/django-opensearch-dsl)

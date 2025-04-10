@@ -24,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install packages
         run: pip install -r requirements_dev.txt
@@ -41,7 +41,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install packages
         run: pip install -r requirements_dev.txt
@@ -58,7 +58,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install packages
         run: pip install -r requirements_dev.txt
@@ -75,7 +75,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install packages
         run: pip install -r requirements_dev.txt
@@ -92,7 +92,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install packages
         run: pip install -r requirements_dev.txt
@@ -107,11 +107,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ 3.9, '3.10', '3.11', '3.12']
-        django-version: [ 32, 42, 50 ]
+        python-version: [ 3.9, '3.10', '3.11', '3.12', '3.13']
+        django-version: [ 42, 50, 51, 52 ]
         opensearch-version: [ 10, 20 ]
         exclude:
           - python-version: 3.9
+            django-version: 50
+          - python-version: 3.9
+            django-version: 51
+          - python-version: 3.9
+            django-version: 52
+          - python-version: 3.13
+            django-version: 42
+          - python-version: 3.13
             django-version: 50
 
     steps:
@@ -135,7 +143,7 @@ jobs:
         run: tox -e py-django${{ matrix.django-version }}-opensearch${{ matrix.opensearch-version }}
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == 3.12 && matrix.django-version == 50
+        if: matrix.python-version == 3.13 && matrix.django-version == 52
         uses: codecov/codecov-action@v1
         with:
           file: ./coverage.xml
@@ -149,10 +157,10 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Creating Built Distributions
         run: |
