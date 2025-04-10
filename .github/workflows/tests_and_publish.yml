@@ -108,11 +108,15 @@ jobs:
     strategy:
       matrix:
         python-version: [ 3.9, '3.10', '3.11', '3.12']
-        django-version: [ 32, 42, 50 ]
+        django-version: [ 32, 42, 50, 51, 52 ]
         opensearch-version: [ 10, 20 ]
         exclude:
           - python-version: 3.9
             django-version: 50
+          - python-version: 3.9
+            django-version: 51
+          - python-version: 3.9
+            django-version: 52
 
     steps:
       - uses: actions/checkout@v4

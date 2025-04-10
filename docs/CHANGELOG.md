@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.7.0 (2025-XX-XX)
+
+* Confirm support for Django 5.1 and 5.2.
+
 ### 0.6.2 (2024-04-23)
 
 * Fix `CelerySignalProcessor` previously using `RealTimeSignalProcessor`'s method due to wrong indentation ([#66](https://github.com/Codoc-os/django-opensearch-dsl/pull/66)),
