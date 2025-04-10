@@ -9,12 +9,11 @@ from django_opensearch_dsl import fields
 from django_opensearch_dsl.registries import registry
 
 
+devnull = open(os.devnull, "w")
+call_command = functools.partial(call_command, stdout=devnull, stderr=devnull)
+
+
 class IndexTestCase(SimpleTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        devnull = open(os.devnull, "w")
-        cls.call_command = functools.partial(call_command, stdout=devnull, stderr=devnull)
 
     def setUp(self) -> None:
         indices = registry.get_indices()
