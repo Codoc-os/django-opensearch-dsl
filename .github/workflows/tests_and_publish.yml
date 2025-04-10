@@ -108,7 +108,7 @@ jobs:
     strategy:
       matrix:
         python-version: [ 3.9, '3.10', '3.11', '3.12']
-        django-version: [ 32, 42, 50, 51, 52 ]
+        django-version: [ 42, 50, 51, 52 ]
         opensearch-version: [ 10, 20 ]
         exclude:
           - python-version: 3.9
@@ -139,7 +139,7 @@ jobs:
         run: tox -e py-django${{ matrix.django-version }}-opensearch${{ matrix.opensearch-version }}
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == 3.12 && matrix.django-version == 50
+        if: matrix.python-version == 3.12 && matrix.django-version == 52
         uses: codecov/codecov-action@v1
         with:
           file: ./coverage.xml

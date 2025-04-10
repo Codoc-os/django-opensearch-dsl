@@ -3,6 +3,7 @@
 ### 0.7.0 (2025-XX-XX)
 
 * Confirm support for Django 5.1 and 5.2.
+* Drop support for Django 3.2.
 
 ### 0.6.2 (2024-04-23)
 
