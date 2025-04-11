@@ -39,8 +39,7 @@ an [index refresh](https://www.elastic.co/guide/en/elasticsearch/reference/curre
 
 Default: `False`
 
-Run indexing in parallel using OpenSearch's parallel_bulk() method. Note that some databases (e.g. SQLite)
-do not play well with this option.
+Run bulk operations in parallel. Note that some databases (e.g. sqlite) do not play well with this option.
 
 ## `OPENSEARCH_DSL_QUERYSET_PAGINATION`
 

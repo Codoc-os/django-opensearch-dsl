@@ -16,6 +16,7 @@ from django.db.models import Q
 
 from django_opensearch_dsl.registries import registry
 
+from ...apps import DODConfig
 from ..enums import OpensearchAction
 from ..types import parse
 
@@ -324,20 +325,30 @@ class Command(BaseCommand):
         subparser.add_argument(
             "-c", "--count", type=int, default=None, help="Update at most COUNT objects (0 to index everything)."
         )
-        subparser.add_argument(
-            "-p",
-            "--parallel",
-            action="store_true",
-            default=False,
-            help="Parallelize the communication with Opensearch.",
-        )
-        subparser.add_argument(
+        refresh = subparser.add_mutually_exclusive_group()
+        refresh.add_argument(
             "-r",
             "--refresh",
             action="store_true",
-            default=False,
-            help="Make operations performed on the indices immediatly available for search.",
+            default=DODConfig.auto_refresh_enabled(),
+            help=(
+                "Whether the operations performed on the indices are immediately available for search. Default to "
+                "`OPENSEARCH_DSL_AUTO_REFRESH` (which default to `False`)"
+            ),
         )
+        refresh.add_argument("--no-refresh", action="store_false")
+        parallel = subparser.add_mutually_exclusive_group()
+        parallel.add_argument(
+            "-p",
+            "--parallel",
+            action="store_true",
+            default=DODConfig.parallel_enabled(),
+            help=(
+                "Whether to run bulk operations in parallel. Default to `OPENSEARCH_DSL_PARALLEL` (which default to "
+                "`False`)"
+            ),
+        )
+        refresh.add_argument("--no-parallel", action="store_false")
         subparser.add_argument(
             "-m",
             "--missing",
