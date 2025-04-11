@@ -13,6 +13,8 @@
 * [Cédric Raud](https://github.com/cedricraud)
 * [Jordan Hyatt](https://github.com/JordanHyatt)
 * [jlariza](https://github.com/jlariza)
+* [Mariusz Felisiak](https://github.com/felixxm)
+* [gcarq](https://github.com/gcarq)
 
 ---
 

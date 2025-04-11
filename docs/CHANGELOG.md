@@ -1,10 +1,16 @@
 # Changelog
 
-### 0.7.0 (2025-XX-XX)
+### 0.7.0 (2025-04-11)
 
-* Confirm support for Python 3.13.
-* Confirm support for Django 5.1 and 5.2.
-* Drop support for Django 3.2.
+* `--refresh` and `--parallel` options of the CLI now default to the respective value of `OPENSEARCH_DSL_AUTO_REFRESH`
+  and `OPENSEARCH_DSL_AUTO_PARALLEL`.
+* Implement `get_documents()` for `DocumentRegistry` ([#74](https://github.com/Codoc-os/django-opensearch-dsl/pull/74)), 
+  Contributed by [gcarq](https://github.com/gcarq).
+* Update supported versions of Python and Django ([#75](https://github.com/Codoc-os/django-opensearch-dsl/pull/75)):
+  * Confirm support for Python 3.13.
+  * Confirm support for Django 5.1 and 5.2.
+  * Drop support for Django 3.2.  
+  Contributed by [Mariusz Felisiak](https://github.com/felixxm)
 
 ### 0.6.2 (2024-04-23)
 
