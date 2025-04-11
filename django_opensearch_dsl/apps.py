@@ -36,6 +36,11 @@ class DODConfig(AppConfig):
         return getattr(settings, "OPENSEARCH_DSL_AUTO_REFRESH", False)
 
     @classmethod
+    def parallel_enabled(cls):
+        """Return whether parallel operation is enabled."""
+        return getattr(settings, "OPENSEARCH_DSL_PARALLEL", False)
+
+    @classmethod
     def default_queryset_pagination(cls):
         """Return `OPENSEARCH_DSL_QUERYSET_PAGINATION`."""
         return getattr(settings, "OPENSEARCH_DSL_QUERYSET_PAGINATION", 4096)
