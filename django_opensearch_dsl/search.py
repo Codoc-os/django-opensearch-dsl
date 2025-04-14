@@ -1,4 +1,6 @@
-from django.db.models import Case, When
+from typing import Any, Union
+
+from django.db.models import Case, QuerySet, When
 from django.db.models.fields import IntegerField
 from opensearchpy.connection.connections import connections
 from opensearchpy.helpers.search import Search as DSLSearch
@@ -7,16 +9,16 @@ from opensearchpy.helpers.search import Search as DSLSearch
 class Search(DSLSearch):
     """Subclass of `opensearchpy.helpers.search.Search` with some utility methods."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         self._model = kwargs.pop("model", None)
         super(Search, self).__init__(**kwargs)
 
-    def _clone(self):
+    def _clone(self) -> type["Search"]:
         s = super(Search, self)._clone()
         s._model = self._model
         return s
 
-    def to_queryset(self, keep_order=True):
+    def to_queryset(self, keep_order: bool = True) -> QuerySet:
         """Return a django queryset corresponding to the opensearch result."""
         s = self
 
@@ -36,7 +38,7 @@ class Search(DSLSearch):
 
         return qs
 
-    def validate(self, explain=False):
+    def validate(self, explain: bool = False) -> Union[bool, tuple[bool, list[str]]]:
         """Expose `opensearchpy` validate API.
 
         It can validate a query syntax without executing it.

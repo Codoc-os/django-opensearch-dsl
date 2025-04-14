@@ -138,13 +138,13 @@ class EventDocument(Document):
 
 ---
 
-* `def get_indexing_queryset(self, filter_=None, exclude=None, count=None, verbose=False, action=OpensearchAction.INDEX, stdout=sys.stdout)`
+* `def get_indexing_queryset(self, filter_=None, exclude=None, count=None, verbose=False, action=CommandAction.INDEX, stdout=sys.stdout)`
 
     * `filter_` (`Optional[Q]`) - Given to `get_queryset()`.
     * `exclude` (`Optional[Q]`) - Given to `get_queryset()`.
     * `count` (`Optional[int]`) - Given to `get_queryset()`.
     * `verbose` (`bool`) - If set to `True`, will display the progression of the action on standard output.
-    * `action` (`OpensearchAction`) - Used by the verbose.
+    * `action` (`CommandAction`) - Used by the verbose.
     * `stdout` (`io.FileIO`) - Standard output used when verbose is `True` (default to `stdout`).
 
 This method chunks manually the queryset before sending them to Opensearch while displaying the progression and time
