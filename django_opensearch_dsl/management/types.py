@@ -5,22 +5,22 @@ from dateutil.parser import isoparse
 from django.conf import settings
 from django.utils.timezone import is_aware, make_aware
 
-Nothing = type(Ellipsis)
-Values = Union[None, int, float, datetime.datetime, str, List["Values"]]
+EllipsisType = type(Ellipsis)
+Values = Union[None, int, float, datetime.datetime, str, List["Values"], EllipsisType]
 
 
-def datetime_parser(value: str) -> Union[Nothing, datetime.datetime]:
+def datetime_parser(value: str) -> Union[EllipsisType, datetime.datetime]:
     """Try to parse the given value as a ISO 8601's datetime."""
     try:
         date = isoparse(value)
         if not is_aware(date):
             date = make_aware(isoparse(value))
         return date
-    except ValueError as e:
+    except ValueError:
         return ...
 
 
-def int_parser(value: str) -> Union[Nothing, int]:
+def int_parser(value: str) -> Union[EllipsisType, int]:
     """Try to parse the given value as an integer."""
     try:
         return int(value)
@@ -28,7 +28,7 @@ def int_parser(value: str) -> Union[Nothing, int]:
         return ...
 
 
-def float_parser(value: str) -> Union[Nothing, float]:
+def float_parser(value: str) -> Union[EllipsisType, float]:
     """Try to parse the given value as a float."""
     try:
         return float(value)
@@ -36,7 +36,7 @@ def float_parser(value: str) -> Union[Nothing, float]:
         return ...
 
 
-def none_parser(value: str) -> Union[Nothing, None]:
+def none_parser(value: str) -> Union[EllipsisType, None]:
     """Try to parse the given value as a float."""
     return None if value == "" else ...
 

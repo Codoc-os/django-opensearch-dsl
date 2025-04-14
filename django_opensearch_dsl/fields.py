@@ -1,5 +1,5 @@
 from types import MethodType
-from typing import Iterable
+from typing import Any, Iterable
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -31,7 +31,6 @@ __all__ = [
     "KeywordField",
     "TextField",
     "SearchAsYouTypeField",
-    "FileFieldMixin",
     "FileField",
 ]
 
@@ -39,17 +38,17 @@ __all__ = [
 class DODField(fields.Field):
     """Field allowing to retrieve a value from a `Model` instance."""
 
-    def __init__(self, attr=None, **kwargs):
+    def __init__(self, attr: str = None, **kwargs: Any):
         super(DODField, self).__init__(**kwargs)
         self._path = attr.split(".") if attr else []
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Any) -> None:
         if key == "get_value_from_instance":
             self.__dict__[key] = value
         else:
             super(DODField, self).__setattr__(key, value)
 
-    def get_value_from_instance(self, instance, field_value_to_ignore=None):
+    def get_value_from_instance(self, instance: models.Model, field_value_to_ignore: Any = None) -> Any:
         """Retrieve the value to index for the given instance."""
         if instance is None:
             return None
@@ -90,7 +89,7 @@ class DODField(fields.Field):
 class ObjectField(DODField, fields.Object):
     """Allow indexing of `OneToOneRel`, `OneToOneField` or `ForeignKey`."""
 
-    def _get_inner_field_data(self, obj, field_value_to_ignore=None):
+    def _get_inner_field_data(self, instance: models.Model, field_value_to_ignore: Any = None) -> Any:
         """Compute the dictionary to index according to the field parameters."""
         data = {}
 
@@ -108,18 +107,18 @@ class ObjectField(DODField, fields.Object):
             prep_func = getattr(doc_instance, "prepare_%s" % name, None)
 
             if prep_func:
-                data[name] = prep_func(obj)
+                data[name] = prep_func(instance)
             else:
-                data[name] = field.get_value_from_instance(obj, field_value_to_ignore)
+                data[name] = field.get_value_from_instance(instance, field_value_to_ignore)
 
         # This allows for ObjectFields to be indexed from dicts with
         # dynamic keys (i.e. keys/fields not defined in 'properties')
-        if not data and obj and isinstance(obj, dict):
-            data = obj
+        if not data and instance and isinstance(instance, dict):
+            data = instance
 
         return data
 
-    def get_value_from_instance(self, instance, field_value_to_ignore=None):
+    def get_value_from_instance(self, instance: models.Model, field_value_to_ignore: Any = None) -> Any:
         """Return the dictionary to index."""
         objs: Iterable = super(ObjectField, self).get_value_from_instance(instance, field_value_to_ignore)
 
@@ -140,17 +139,17 @@ class ObjectField(DODField, fields.Object):
         return self._get_inner_field_data(objs, field_value_to_ignore)
 
 
-def ListField(field):  # noqa
+def ListField(field: DODField) -> DODField:  # noqa
     """Wrap a field so that its value is iterated over."""
 
     original_get_value_from_instance = field.get_value_from_instance
 
-    def get_value_from_instance(self, instance, field_value_to_ignore=None):
+    def get_value_from_instance(self: DODField, instance: models.Model, field_value_to_ignore: Any = None) -> Any:
         if not original_get_value_from_instance(instance):  # pragma: no cover
             return []
         return [value for value in original_get_value_from_instance(instance)]
 
-    field.get_value_from_instance = MethodType(get_value_from_instance, field)
+    field.get_value_from_instance = MethodType(get_value_from_instance, field)  # type: ignore[assignment]
     return field
 
 
@@ -250,17 +249,13 @@ class SearchAsYouTypeField(DODField, fields.SearchAsYouType):
     """Allow indexing of text-like type for as-you-type completion."""
 
 
-class FileFieldMixin:
-    """Mixin allowing the indexing of Django `FileField`."""
+class FileField(DODField, fields.Text):
+    """Index the URL associated with a Django `FileField`."""
 
-    def get_value_from_instance(self, instance, field_value_to_ignore=None):
+    def get_value_from_instance(self, instance: models.Model, field_value_to_ignore: Any = None) -> Any:
         """Retrieve the url from the `FileField`."""
-        _file = super(FileFieldMixin, self).get_value_from_instance(instance, field_value_to_ignore)
+        _file = super().get_value_from_instance(instance, field_value_to_ignore)
 
         if isinstance(_file, FieldFile):
             return _file.url if _file else ""
         return _file if _file else ""
-
-
-class FileField(FileFieldMixin, DODField, fields.Text):
-    """Index the URL associated with a Django `FileField`."""

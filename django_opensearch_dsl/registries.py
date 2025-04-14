@@ -1,25 +1,30 @@
 from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
+from typing import TYPE_CHECKING, Any, Generator, Iterable
 
 from django.core.exceptions import ImproperlyConfigured, ObjectDoesNotExist
 from django.db.models import Model
-from opensearchpy.helpers.document import Document as DSLDocument
+from opensearchpy import Index
 from opensearchpy.helpers.utils import AttrDict
 
 from .apps import DODConfig
+from .enums import BulkAction
 from .exceptions import RedeclaredFieldError
+
+if TYPE_CHECKING:
+    from .documents import Document
 
 
 class DocumentRegistry:
     """Registry of models classes to a set of Document classes."""
 
-    def __init__(self):
-        self._indices = defaultdict(set)
-        self._models = defaultdict(set)
-        self._related_models = defaultdict(set)
+    def __init__(self) -> None:
+        self._indices: defaultdict[Index, set[type["Document"]]] = defaultdict(set)
+        self._models: defaultdict[type[Model], set[type["Document"]]] = defaultdict(set)
+        self._related_models: defaultdict[type[Model], set[type[Model]]] = defaultdict(set)
 
-    def register(self, index, doc_class):
+    def register(self, index: Index, doc_class: type["Document"]) -> None:
         """Register the model with the registry."""
         self._models[doc_class.django.model].add(doc_class)
 
@@ -33,20 +38,20 @@ class DocumentRegistry:
 
         self._indices[index].add(doc_class)
 
-    def register_document(self, document):
+    def register_document(self, doc_class: type["Document"]) -> type["Document"]:
         """Register given document within the registry."""
-        django_meta = getattr(document, "Django")
+        django_meta = getattr(doc_class, "Django")
         # Raise error if Django class can not be found
         if not django_meta:  # pragma: no cover
-            message = f"You must declare the Django class inside {document.__name__}"
+            message = f"You must declare the Django class inside {doc_class.__name__}"
             raise ImproperlyConfigured(message)
 
         # Keep all django related attribute in a django_attr AttrDict
         django_attr = AttrDict(
             {
-                "model": getattr(document.Django, "model"),
+                "model": getattr(doc_class.Django, "model"),
                 "queryset_pagination": getattr(
-                    document.Django, "queryset_pagination", DODConfig.default_queryset_pagination()
+                    doc_class.Django, "queryset_pagination", DODConfig.default_queryset_pagination()
                 ),
                 "ignore_signals": getattr(django_meta, "ignore_signals", False),
                 "auto_refresh": getattr(django_meta, "auto_refresh", DODConfig.auto_refresh_enabled()),
@@ -57,37 +62,37 @@ class DocumentRegistry:
             raise ImproperlyConfigured("You must specify the django model")
 
         # Add The model fields into opensearch mapping field
-        model_field_names = getattr(document.Django, "fields", [])
-        mapping_fields = document._doc_type.mapping.properties.properties.to_dict().keys()  # noqa
+        model_field_names = getattr(doc_class.Django, "fields", [])
+        mapping_fields = doc_class._doc_type.mapping.properties.properties.to_dict().keys()  # noqa
 
         for field_name in model_field_names:
             if field_name in mapping_fields:  # pragma: no cover
                 raise RedeclaredFieldError(
-                    f"You cannot redeclare the field named '{field_name}' on {document.__name__}"
+                    f"You cannot redeclare the field named '{field_name}' on {doc_class.__name__}"
                 )
 
             django_field = django_attr.model._meta.get_field(field_name)  # noqa
 
-            field_instance = document.to_field(field_name, django_field)
-            document._doc_type.mapping.field(field_name, field_instance)  # noqa
+            field_instance = doc_class.to_field(field_name, django_field)
+            doc_class._doc_type.mapping.field(field_name, field_instance)  # noqa
 
         # Add django attribute with all the django attribute
-        setattr(document, "django", django_attr)
+        setattr(doc_class, "django", django_attr)
 
         # Set the fields of the mappings
-        fields = document._doc_type.mapping.properties.properties.to_dict()  # noqa
-        setattr(document, "_fields", fields)
+        fields = doc_class._doc_type.mapping.properties.properties.to_dict()  # noqa
+        setattr(doc_class, "_fields", fields)
 
         # Update settings of the document index
         default_index_settings = deepcopy(DODConfig.default_index_settings())
-        document._index.settings(**{**default_index_settings, **document._index._settings})  # noqa
+        doc_class._index.settings(**{**default_index_settings, **doc_class._index._settings})  # noqa
 
         # Register the document and index class to our registry
-        self.register(index=document._index, doc_class=document)  # noqa
+        self.register(index=doc_class._index, doc_class=doc_class)  # noqa
 
-        return document
+        return doc_class
 
-    def _get_related_doc(self, instance):
+    def _get_related_doc(self, instance: Model) -> Generator[type["Document"], None, None]:
         for model in self._related_models.get(instance.__class__, []):
             for doc in self._models[model]:
                 if (
@@ -96,7 +101,7 @@ class DocumentRegistry:
                 ):
                     yield doc
 
-    def update_related(self, instance, action="index", **kwargs):
+    def update_related(self, instance: Model, action: BulkAction = BulkAction.INDEX, **kwargs: Any) -> None:
         """Update documents related to `instance`.
 
         Related documents are found using the `get_instances_from_related()`
@@ -115,7 +120,7 @@ class DocumentRegistry:
             if related is not None:
                 doc_instance.update(related, action, **kwargs)
 
-    def delete_related(self, instance, action="index", **kwargs):
+    def delete_related(self, instance: Model, action: BulkAction = BulkAction.INDEX, **kwargs: Any) -> None:
         """Remove `instance` from related models.
 
         `related_instance_to_ignore` ensures that `instance` is only removed
@@ -135,7 +140,7 @@ class DocumentRegistry:
             if related is not None:
                 doc_instance.update(related, action, **kwargs)
 
-    def update(self, instance, action="index", **kwargs):
+    def update(self, instance: Model, action: BulkAction = BulkAction.INDEX, **kwargs: Any) -> None:
         """Update all the opensearch documents attached to this model.
 
         Only update if settings' `OPENSEARCH_DSL_AUTOSYNC` is `True` and
@@ -154,37 +159,37 @@ class DocumentRegistry:
                 if not doc.django.ignore_signals:
                     doc().update(instance, action, **kwargs)
 
-    def delete(self, instance, **kwargs):
+    def delete(self, instance: Model, **kwargs: Any) -> None:
         """Delete all the opensearch documents attached to this model.
 
         Only delete if settings' `OPENSEARCH_DSL_AUTOSYNC` is `True` and
         `Document'`s `ignore_signals` is `False`.
         """
-        self.update(instance, action="delete", **kwargs)
+        self.update(instance, action=BulkAction.DELETE, **kwargs)
 
-    def get_documents(self, models=None):
+    def get_documents(self, models: Iterable[Model] = None) -> set[type["Document"]]:
         """Get all documents in the registry or the documents for a list of models."""
         if models is not None:
             docs_iter = (self._models[model] for model in models if model in self._models)
         else:
-            docs_iter = self._models.values()
+            docs_iter = (model for model in self._models.values())
         return set(chain.from_iterable(docs_iter))
 
-    def get_models(self):
+    def get_models(self) -> set[type[Model]]:
         """Get all models in the registry."""
         return set(self._models.keys())
 
-    def get_indices(self, models=None):
+    def get_indices(self, models: Iterable[Model] = None) -> set[Index]:
         """Get all indices in the registry or the indices for a list of models."""
         if models is not None:
             return set(index for index, docs in self._indices.items() for doc in docs if doc.django.model in models)
 
         return set(self._indices.keys())
 
-    def __contains__(self, obj):
+    def __contains__(self, instance: type[Model]) -> bool:
         """Check that a model is in the registry."""
-        if issubclass(obj, Model):
-            return obj in self._models or obj in self._related_models
+        if issubclass(instance, Model):
+            return instance in self._models or instance in self._related_models
         raise TypeError(
             f"'in <{type(self).__name__}>' requires a Model subclass as left operand, not {type(dict).__name__}"
         )

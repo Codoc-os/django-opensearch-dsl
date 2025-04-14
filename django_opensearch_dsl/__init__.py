@@ -6,6 +6,6 @@ from .fields import *  # noqa
 __version__ = "0.7.0"
 
 
-def autodiscover():
+def autodiscover() -> None:
     """Force the import of the `documents` modules of each `INSTALLED_APPS`."""
     autodiscover_modules("documents")

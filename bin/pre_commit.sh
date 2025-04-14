@@ -56,6 +56,21 @@ echo ""
 
 
 ################################################################################
+#                                   MYPY                                       #
+################################################################################
+echo -n "${Cyan}Running mypy... $Color_Off"
+out=$(mypy django_opensearch_dsl --disallow-untyped-def)
+if [ "$?" -ne 0 ] ; then
+  echo "${Red}Error !$Color_Off"
+  echo -e "$out"
+  EXIT_CODE=1
+else
+  echo "${Green}Ok ✅ $Color_Off"
+fi
+echo ""
+
+
+################################################################################
 #                                  BANDIT                                      #
 ################################################################################
 echo -n "${Cyan}Running bandit... $Color_Off"
