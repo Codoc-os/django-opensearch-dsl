@@ -1,7 +1,7 @@
+import copy
 import io
 import sys
 import time
-import copy
 from collections import deque
 from functools import partial
 from typing import Iterable, Optional
@@ -90,16 +90,16 @@ class Document(DSLDocument):
         return f"{eta} {unit}"
 
     def get_indexing_queryset(
-            self,
-            db_alias: str = None,
-            verbose: bool = False,
-            filter_: Optional[Q] = None,
-            exclude: Optional[Q] = None,
-            count: int = None,
-            action: OpensearchAction = OpensearchAction.INDEX,
-            stdout: io.FileIO = sys.stdout,
-            batch_size: int = None,
-            batch_type: str = "offset",
+        self,
+        db_alias: str = None,
+        verbose: bool = False,
+        filter_: Optional[Q] = None,
+        exclude: Optional[Q] = None,
+        count: int = None,
+        action: OpensearchAction = OpensearchAction.INDEX,
+        stdout: io.FileIO = sys.stdout,
+        batch_size: int = None,
+        batch_type: str = "offset",
     ) -> Iterable:
         """Divide the queryset into chunks."""
         chunk_size = batch_size or self.django.queryset_pagination
@@ -113,33 +113,39 @@ class Document(DSLDocument):
         if verbose:
             stdout.write(f"{action} {model}: 0% ({self._eta(start, done, count)})\r")
 
+        if count == 0:
+            stdout.write(f"{action} {model}: 100% (0 objects)\n")
+            return
+
         if batch_type == "pk_filters":
             pks = qs.aggregate(min=Min("pk"), max=Max("pk"))
             total_batches = (pks["max"] - pks["min"]) // chunk_size
             for batch_number, offset in enumerate(range(pks["min"], pks["max"] + 1, chunk_size), start=1):
-                batch_qs = list(copy.deepcopy(qs.filter(pk__gte=offset, pk__lt=offset + chunk_size)))
-                stdout.write(f"Processing batch {batch_number}/{total_batches}: \n")
-                for obj in batch_qs:
-                    done += 1
-                    if done % chunk_size == 0:
-                        stdout.write(f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r")
-                    yield obj
-                if len(batch_qs) > 0:
-                    stdout.write(f"Max primary key in the current batch: {batch_qs[-1].pk}\n")
-        else:
-            total_batches = (count + chunk_size - 1) // chunk_size
-            for batch_number, offset in enumerate(range(0, count, chunk_size), start=1):
-                batch_qs = list(copy.deepcopy(qs[offset: offset + chunk_size].all()))
+                batch_qs = list(qs.filter(pk__gte=offset, pk__lt=offset + chunk_size))
                 stdout.write(f"Processing batch {batch_number}/{total_batches}: \n")
                 for obj in batch_qs:
                     done += 1
                     if done % chunk_size == 0:
                         stdout.write(
-                            f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r")
+                            f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r"
+                        )
                     yield obj
                 if len(batch_qs) > 0:
-                    stdout.write(f"Max primary key in the current batch: {batch_qs[-1].pk}\n")
-
+                    stdout.write(f"Max primary key in the current {model} batch: {batch_qs[-1].pk}\n")
+        else:
+            total_batches = (count + chunk_size - 1) // chunk_size
+            for batch_number, offset in enumerate(range(0, count, chunk_size), start=1):
+                batch_qs = list(qs[offset : offset + chunk_size].all())
+                stdout.write(f"Processing batch {batch_number}/{total_batches}: \n")
+                for obj in batch_qs:
+                    done += 1
+                    if done % chunk_size == 0:
+                        stdout.write(
+                            f"{action} {model}: {round(done / count * 100)}% ({self._eta(start, done, count)})\r"
+                        )
+                    yield obj
+                if len(batch_qs) > 0:
+                    stdout.write(f"Max primary key in the current {model} batch: {batch_qs[-1].pk}\n")
 
     def init_prepare(self):
         """Initialise the data model preparers once here.
