@@ -73,14 +73,14 @@ class Document(DSLDocument):
         exclude: Optional[Q] = None
     ) -> QuerySet:
         """Return the queryset that should be indexed by this doc type."""
-        qs = self.django.model.objects.iterator(chunk_size=10_000)
+        qs = self.django.model.objects
 
         if filter_:
             qs = qs.filter(filter_)
         if exclude:
             qs = qs.exclude(exclude)
 
-        return qs
+        return qs.iterator(chunk_size=10_000)
 
     def get_count(
         self,
