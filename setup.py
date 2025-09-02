@@ -30,7 +30,7 @@ LONG_DESCRIPTION = (
 )
 REQUIREMENTS = [
     'opensearch-py>=2.2.0',
-    'dateutils',
+    'python-dateutil',
 ]
 EXTRA_REQUIREMENTS = {
     'celery': ["celery>=4.1.0"],
