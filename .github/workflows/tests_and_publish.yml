@@ -124,9 +124,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ 3.9, '3.10', '3.11', '3.12', '3.13']
+        python-version: [ 3.9, '3.10', '3.11', '3.12', '3.13' ]
         django-version: [ 42, 50, 51, 52 ]
-        opensearch-version: [ 10, 20 ]
+        opensearch-version: [ 10, 20, 30 ]
         exclude:
           - python-version: 3.9
             django-version: 50
