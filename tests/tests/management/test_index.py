@@ -1,6 +1,7 @@
 import functools
 import os
 
+from django.core.management import CommandError
 from django.test import SimpleTestCase
 
 from django_dummy_app.commands import call_command
@@ -21,6 +22,7 @@ class IndexTestCase(SimpleTestCase):
         indices = registry.get_indices()
         for i in indices:
             i.delete(ignore_unavailable=True)
+            i.delete(ignore_unavailable=True, using="other")
 
     def test_index_creation_all(self):
         indices = registry.get_indices()
@@ -28,6 +30,14 @@ class IndexTestCase(SimpleTestCase):
         self.assertFalse(any(map(lambda i: i.exists(), indices)))
         self.call_command("opensearch", "index", "create", force=True)
         self.assertTrue(all(map(lambda i: i.exists(), indices)))
+
+    def test_index_creation_all_using(self):
+        indices = registry.get_indices()
+        self.assertFalse(any(map(lambda i: i.exists(using="default"), indices)))
+        self.assertFalse(any(map(lambda i: i.exists(using="other"), indices)))
+        self.call_command("opensearch", "index", "create", force=True, using="other")
+        self.assertFalse(any(map(lambda i: i.exists(using="default"), indices)))
+        self.assertTrue(all(map(lambda i: i.exists(using="other"), indices)))
 
     def test_index_creation_one(self):
         continent_document = ContinentDocument()
@@ -67,7 +77,7 @@ class IndexTestCase(SimpleTestCase):
         self.call_command("opensearch", "index", "create", country_document.Index.name, force=True)
 
         self.call_command("opensearch", "index", "create", country_document.Index.name, force=True, ignore_error=True)
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(CommandError):
             self.call_command("opensearch", "index", "create", country_document.Index.name, force=True)
 
     def test_index_deletion_all(self):
@@ -77,6 +87,17 @@ class IndexTestCase(SimpleTestCase):
         self.assertTrue(all(map(lambda i: i.exists(), indices)))
         self.call_command("opensearch", "index", "delete", force=True)
         self.assertFalse(any(map(lambda i: i.exists(), indices)))
+
+    def test_index_deletion_all_using(self):
+        self.call_command("opensearch", "index", "create", force=True, using="default")
+        self.call_command("opensearch", "index", "create", force=True, using="other")
+        indices = registry.get_indices()
+
+        self.assertTrue(all(map(lambda i: i.exists(using="default"), indices)))
+        self.assertTrue(all(map(lambda i: i.exists(using="other"), indices)))
+        self.call_command("opensearch", "index", "delete", force=True, using="other")
+        self.assertTrue(all(map(lambda i: i.exists(using="default"), indices)))
+        self.assertFalse(any(map(lambda i: i.exists(using="other"), indices)))
 
     def test_index_deletion_one(self):
         self.call_command("opensearch", "index", "create", force=True)
@@ -117,7 +138,7 @@ class IndexTestCase(SimpleTestCase):
         country_document = CountryDocument()
 
         self.call_command("opensearch", "index", "delete", country_document.Index.name, force=True, ignore_error=True)
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(CommandError):
             self.call_command("opensearch", "index", "delete", country_document.Index.name, force=True)
 
     def test_index_rebuild_two(self):
@@ -164,6 +185,26 @@ class IndexTestCase(SimpleTestCase):
         finally:
             del ContinentDocument._fields[new_field_name]
 
+    def test_index_update_using(self):
+        self.assertFalse(ContinentDocument()._index.exists(using="default"))
+        self.assertFalse(ContinentDocument()._index.exists(using="other"))
+        self.call_command("opensearch", "index", "create", ContinentDocument().Index.name, force=True, using="other")
+        self.assertFalse(ContinentDocument()._index.exists(using="default"))
+        self.assertTrue(ContinentDocument()._index.exists(using="other"))
+
+        new_field_name = "new_field"
+        ContinentDocument._fields[new_field_name] = fields.KeywordField()
+        try:
+            mappings = ContinentDocument._index.get_mapping(using="other")
+            self.assertNotIn(new_field_name, mappings["continent"]["mappings"]["properties"].keys())
+            self.call_command(
+                "opensearch", "index", "update", ContinentDocument().Index.name, force=True, using="other"
+            )
+            mappings = ContinentDocument._index.get_mapping(using="other")
+            self.assertEqual({"type": "keyword"}, mappings["continent"]["mappings"]["properties"].get(new_field_name))
+        finally:
+            del ContinentDocument._fields[new_field_name]
+
     def test_unknown_index(self):
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(CommandError):
             self.call_command("opensearch", "index", "create", "unknown")

@@ -57,7 +57,9 @@ class CountryDocument(Document):
     def prepare_events_id(self, obj):
         return list(obj.events.all().values_list("pk", flat=True))
 
-    def get_queryset(self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None) -> QuerySet:
+    def get_queryset(
+        self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None, alias: str = None
+    ) -> QuerySet:
         """Return the queryset that should be indexed by this doc type."""
         return super().get_queryset(filter_=filter_, exclude=exclude, count=count).prefetch_related("events")
 
@@ -76,7 +78,9 @@ class EventDocument(Document):
     country = fields.ObjectField(doc_class=CountryDocument)
     unknown = fields.LongField(required=False)
 
-    def get_queryset(self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None) -> QuerySet:
+    def get_queryset(
+        self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None, alias: str = None
+    ) -> QuerySet:
         """Return the queryset that should be indexed by this doc type."""
         return super().get_queryset(filter_=filter_, exclude=exclude, count=count).select_related("country")
 

@@ -133,17 +133,31 @@ LOGGING = {
     },
 }
 
-OPENSEARCH_PORT = os.getenv("DJANGO_OS_PORT", "9220")
+OPENSEARCH_0_PORT = os.getenv("DJANGO_OS_0_PORT", "9230")
+OPENSEARCH_1_PORT = os.getenv("DJANGO_OS_1_PORT", "9231")
 OPENSEARCH_DSL = {
     "default": {
         "hosts": [
             {
                 "scheme": "http",
                 "host": "localhost",
-                "port": OPENSEARCH_PORT,
+                "port": OPENSEARCH_0_PORT,
             }
         ],
-        "http_auth": ("admin", ("XJ67NCmLj4yMPPz0wthVUvVGV0cQiq" if OPENSEARCH_PORT == "9220" else "admin")),
+        "http_auth": ("admin", ("XJ67NCmLj4yMPPz0wthVUvVGV0cQiq" if OPENSEARCH_0_PORT != "9210" else "admin")),
+        "timeout": 30,
+        "max_retries": 3,
+        "retry_on_timeout": True,
+    },
+    "other": {
+        "hosts": [
+            {
+                "scheme": "http",
+                "host": "localhost",
+                "port": OPENSEARCH_1_PORT,
+            }
+        ],
+        "http_auth": ("admin", ("XJ67NCmLj4yMPPz0wthVUvVGV0cQiq" if OPENSEARCH_1_PORT != "9211" else "admin")),
         "timeout": 30,
         "max_retries": 3,
         "retry_on_timeout": True,

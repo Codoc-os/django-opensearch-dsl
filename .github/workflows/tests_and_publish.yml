@@ -124,9 +124,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ 3.9, '3.10', '3.11', '3.12', '3.13' ]
-        django-version: [ 42, 50, 51, 52 ]
-        opensearch-version: [ 10, 20, 30 ]
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+        django-version: [ '42', '50', '51', '52' ]
+        opensearch-version: [ '10', '20', '30' ]
         exclude:
           - python-version: 3.9
             django-version: 50
@@ -149,7 +149,7 @@ jobs:
 
       - name: Run Opensearch in docker
         run: |
-          docker compose up -d opensearch_test_${{ matrix.opensearch-version }}
+          docker compose up -d opensearch_test_${{ matrix.opensearch-version }}_0 opensearch_test_${{ matrix.opensearch-version }}_1
           sleep 30
 
       - name: Install Tox and any other packages

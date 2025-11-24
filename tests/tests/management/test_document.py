@@ -2,6 +2,7 @@ import functools
 import os
 import time
 
+from django.core.management import CommandError
 from django.test import TestCase
 
 from django_dummy_app.commands import call_command
@@ -23,18 +24,19 @@ class DocumentTestCase(TestCase):
         indices = registry.get_indices()
         for i in indices:
             i.delete(ignore_unavailable=True)
+            i.delete(ignore_unavailable=True, using="other")
 
     def test_unknown_index(self):
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(CommandError):
             self.call_command("opensearch", "document", "index", "-iunknown")
 
     def test_index_not_created(self):
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(CommandError):
             self.call_command("opensearch", "document", "index", f"-i{CountryDocument.Index.name}")
 
     def test_unknown_field(self):
         self.call_command("opensearch", "index", "create", CountryDocument.Index.name, force=True)
-        with self.assertRaises(SystemExit):
+        with self.assertRaises(CommandError):
             self.call_command(
                 "opensearch",
                 "document",
@@ -55,6 +57,21 @@ class DocumentTestCase(TestCase):
         self.assertEqual(CountryDocument.search().count(), Country.objects.count())
         self.assertEqual(ContinentDocument.search().count(), Continent.objects.count())
         self.assertEqual(EventDocument.search().count(), Event.objects.exclude(country__name="France").count())
+
+    def test_index_all_using(self):
+        self.call_command("opensearch", "index", "create", force=True, using="other")
+        self.assertFalse(ContinentDocument()._index.exists(using="default"))
+        self.assertTrue(ContinentDocument()._index.exists(using="other"))
+
+        self.assertEqual(CountryDocument.search(using="other").count(), 0)
+        self.assertEqual(ContinentDocument.search(using="other").count(), 0)
+        self.assertEqual(EventDocument.search(using="other").count(), 0)
+        self.call_command("opensearch", "document", "index", force=True, refresh=True, using="other")
+        self.assertEqual(CountryDocument.search(using="other").count(), Country.objects.count())
+        self.assertEqual(ContinentDocument.search(using="other").count(), Continent.objects.count())
+        self.assertEqual(
+            EventDocument.search(using="other").count(), Event.objects.exclude(country__name="France").count()
+        )
 
     def test_index_all_parallel(self):
         self.call_command("opensearch", "index", "create", force=True)

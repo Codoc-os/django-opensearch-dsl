@@ -67,9 +67,11 @@ class Document(DSLDocument):
             model=cls.django.model,
         )
 
-    def get_queryset(self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None) -> QuerySet:
+    def get_queryset(
+        self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None, alias: str = None
+    ) -> QuerySet:
         """Return the queryset that should be indexed by this doc type."""
-        qs = self.django.model.objects.all()
+        qs = self.django.model.objects.using(alias).all()
 
         if filter_:
             qs = qs.filter(filter_)
@@ -95,13 +97,14 @@ class Document(DSLDocument):
         verbose: bool = False,
         filter_: Optional[Q] = None,
         exclude: Optional[Q] = None,
+        alias: str = None,
         count: int = None,
         action: CommandAction = CommandAction.INDEX,
         stdout: TextIO = sys.stdout,
     ) -> Iterable:
         """Divide the queryset into chunks."""
         chunk_size = self.django.queryset_pagination
-        qs = self.get_queryset(filter_=filter_, exclude=exclude, count=count)
+        qs = self.get_queryset(filter_=filter_, exclude=exclude, count=count, alias=alias)
         qs = qs.order_by("pk") if not qs.query.is_sliced else qs
         total = qs.count()
         model = self.django.model.__name__
