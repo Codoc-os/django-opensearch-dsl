@@ -106,11 +106,12 @@ queryset used to fetch the data.
 
 ---
 
-* `def get_queryset(self, filter_=None, exclude=None, count=None)`
+* `def get_queryset(self, filter_=None, exclude=None, count=None, alias=None)`
 
     * `filter_` (`Optional[Q]`) - `Q` object given to the queryset's `filter()` method.
     * `exclude` (`Optional[Q]`) - `Q` object given to the queryset's `exclude()` method.
     * `count` (`Optional[int]`) - Limit the queryset with the given number.
+    * `alias` (`Optional[str]`) - Alias of the database to use.
 
 By default, this method retrieves all objects from the model associated with the `Document`, optionally filtering and
 excluding elements according to the given arguments. You can also limit the number of results using the `count` argument.
@@ -131,7 +132,7 @@ class EventDocument(Document):
 
     country = fields.ObjectField(doc_class=CountryDocument)
 
-    def get_queryset(self, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = 0) -> QuerySet:
+    def get_queryset(self, filter_: Optional[Q]=None, exclude: Optional[Q]=None, count: int=0, alias: str=None) -> QuerySet:
         """Select country to improve indexing performance."""
         return super().get_queryset(filter_=filter_, exclude=exclude, count=count).select_related('country')
 ```

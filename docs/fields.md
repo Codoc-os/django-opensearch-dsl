@@ -68,7 +68,6 @@ directly. Change the `CarDocument` to look like this:
 ```python
 # documents.py
 
-@registry.register_document
 class CarDocument(Document):
     # add a string field to the Opensearch mapping called type, the
     # value of which is derived from the model's type_to_string attribute
@@ -192,7 +191,7 @@ class CarDocument(Document):
       'color',
     ]
 
-  def get_queryset(self, filters: Optional[Dict[str, Any]] = None, count: int = 0) -> 'QuerySet':
+  def get_queryset(self, filters: Optional[Dict[str, Any]]=None, count: int=0, alias: str=None) -> 'QuerySet':
     """Not mandatory but to improve performance we can select related in one sql request"""
     return super().get_queryset(count=count).select_related(
       'manufacturer'

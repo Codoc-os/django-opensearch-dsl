@@ -8,13 +8,25 @@ from typing import Any, Callable
 
 import opensearchpy
 from django.core.exceptions import FieldError
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
+from opensearchpy import OpenSearch
+from opensearchpy.connection.connections import connections
 
 from ...apps import DODConfig
 from ...enums import CommandAction
 from ...registries import registry
 from ..types import Values, parse
+
+
+def connection(using: str = "default") -> opensearchpy.OpenSearch:
+    """Return the OpenSearch connection for the given alias."""
+    try:
+        return connections.get_connection(using)
+    except KeyError:
+        raise CommandError(
+            f"No OpenSearch connection found for alias '{using}', known connections are: {list(connections._kwargs.keys())}"
+        )
 
 
 class Command(BaseCommand):
@@ -46,20 +58,20 @@ class Command(BaseCommand):
                     f"manage.py index: error: invalid filter: '{value}' (filter must be formatted as "
                     f"'[Field Lookups]=[value]')\n",
                 )
-                exit(1)
+                raise CommandError
             return lookup, v  # noqa
 
         return wrap
 
-    def __list_index(self, **options: Any) -> None:  # noqa pragma: no cover
+    def __list_index(self, using: OpenSearch, **options: Any) -> None:  # noqa pragma: no cover
         """List all known index and indicate whether they are created or not."""
         indices = registry.get_indices()
         result = defaultdict(list)
         for index in indices:
             module = index._doc_types[0].__module__.split(".")[-2]  # noqa
-            exists = index.exists()
+            exists = index.exists(using=using)
             checkbox = f"[{'X' if exists else ' '}]"
-            count = f" ({index.search().count()} documents)" if exists else ""
+            count = f" ({index.search(using=using).count()} documents)" if exists else ""
             result[module].append(f"{checkbox} {index._name}{count}")
         for app, indice_names in result.items():
             self.stdout.write(self.style.MIGRATE_LABEL(app))
@@ -72,6 +84,7 @@ class Command(BaseCommand):
         force: bool,
         verbosity: int,
         ignore_error: bool,
+        using: OpenSearch,
         **options: Any,
     ) -> None:
         """Manage the creation and deletion of indices."""
@@ -85,7 +98,7 @@ class Command(BaseCommand):
             unknown = set(indices) - set(known_name)
             if unknown:
                 self.stderr.write(f"Unknown indices '{list(unknown)}', choices are: '{known_name}'")
-                exit(1)
+                raise CommandError
 
             # Only keep given indices
             given_indices = [i for i in known if i._name in indices]
@@ -107,7 +120,7 @@ class Command(BaseCommand):
                     self.stdout.write("")
                     break
                 elif p.lower() in ["no", "n"]:
-                    exit(1)
+                    raise CommandError
 
         pp = action.present_participle.title()
         for index in given_indices:
@@ -119,24 +132,24 @@ class Command(BaseCommand):
                 self.stdout.flush()
             try:
                 if action == CommandAction.CREATE:
-                    index.create()
+                    index.create(using=using)
                 elif action == CommandAction.DELETE:
-                    index.delete()
+                    index.delete(using=using)
                 elif action == CommandAction.UPDATE:
-                    index.put_mapping(body=index.to_dict()["mappings"])
+                    index.put_mapping(using=using, body=index.to_dict()["mappings"])
                 else:
                     try:
-                        index.delete()
+                        index.delete(using=using)
                     except opensearchpy.exceptions.NotFoundError:
                         pass
-                    index.create()
+                    index.create(using=using)
             except opensearchpy.exceptions.TransportError as e:
                 if verbosity or not ignore_error:
                     error = self.style.ERROR(f"Error: {e.error} - {e.info}")
                     self.stderr.write(f"{pp} index '{index._name}'...\n{error}")  # noqa
                 if not ignore_error:
                     self.stderr.write("exiting...")
-                    exit(1)
+                    raise CommandError
             else:
                 if verbosity:
                     self.stdout.write(f"{pp} index '{index._name}'... {self.style.SUCCESS('OK')}")  # noqa
@@ -153,6 +166,8 @@ class Command(BaseCommand):
         count: bool,
         refresh: bool,
         missing: bool,
+        using: OpenSearch,
+        database: str,
         **options: Any,
     ) -> None:
         """Manage the creation and deletion of indices."""
@@ -168,7 +183,7 @@ class Command(BaseCommand):
             unknown = set(indices) - set(known_name)
             if unknown:
                 self.stderr.write(f"Unknown indices '{list(unknown)}', choices are: '{known_name}'")
-                exit(1)
+                raise CommandError
 
             # Only keep given indices
             given_indices = list(filter(lambda i: i._name in indices, known))  # type: ignore[arg-type]
@@ -176,11 +191,11 @@ class Command(BaseCommand):
             given_indices = list(known)
 
         # Ensure every indices needed are created
-        not_created = [i._name for i in given_indices if not i.exists()]  # noqa
+        not_created = [i._name for i in given_indices if not i.exists(using=using)]  # noqa
         if not_created:
             self.stderr.write(f"The following indices are not created : {not_created}")
             self.stderr.write("Use 'python3 manage.py opensearch list' to list indices' state.")
-            exit(1)
+            raise CommandError
 
         # Check field, preparing to display expected actions
         s = f"The following documents will be {action.past}:"
@@ -189,17 +204,17 @@ class Command(BaseCommand):
             # Handle --missing
             exclude_ = exclude
             if missing and action == CommandAction.INDEX:
-                q = Q(pk__in=[h.meta.id for h in index.search().extra(stored_fields=[]).scan()])
+                q = Q(pk__in=[h.meta.id for h in index.search(using=using).extra(stored_fields=[]).scan()])
                 exclude_ = exclude_ & q if exclude_ is not None else q
 
             document = index._doc_types[0]()  # noqa
             try:
                 kwargs_list.append({"filter_": filter_, "exclude": exclude_, "count": count})
-                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count).count()
+                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count, alias=database).count()
             except FieldError as e:
                 model = index._doc_types[0].django.model.__name__  # noqa
                 self.stderr.write(f"Error while filtering on '{model}' (from index '{index._name}'):\n{e}'")  # noqa
-                exit(1)
+                raise CommandError
             else:
                 s += f"\n\t- {qs} {document.django.model.__name__}."
 
@@ -215,14 +230,16 @@ class Command(BaseCommand):
                     self.stdout.write("\n")
                     break
                 elif p.lower() in ["no", "n"]:
-                    exit(1)
+                    raise CommandError
 
         result = "\n"
         for index, kwargs in zip(given_indices, kwargs_list):
             document = index._doc_types[0]()  # noqa
-            qs = document.get_indexing_queryset(stdout=self.stdout._out, verbose=verbosity, action=action, **kwargs)
+            qs = document.get_indexing_queryset(
+                stdout=self.stdout._out, verbose=verbosity, action=action, alias=database, **kwargs
+            )
             success, errors = document.update(
-                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False
+                qs, parallel=parallel, refresh=refresh, action=action, raise_on_error=False, using=using
             )
 
             success_str = self.style.SUCCESS(success) if success else success
@@ -256,6 +273,12 @@ class Command(BaseCommand):
             description="Show all available indices (and their state) for the current project.",
         )
         subparser.set_defaults(func=self.__list_index)
+        subparser.add_argument(
+            "--using",
+            type=connection,
+            default=connection("default"),
+            help="Alias of the OpenSearch connection to use. Default to 'default'.",
+        )
 
         # 'manage' subcommand
         subparser = subparsers.add_parser(
@@ -264,6 +287,12 @@ class Command(BaseCommand):
             description="Manage the creation an deletion of indices.",
         )
         subparser.set_defaults(func=self._manage_index)
+        subparser.add_argument(
+            "--using",
+            type=connection,
+            default=connection("default"),
+            help="Alias of the OpenSearch connection to use. Default to 'default'.",
+        )
         subparser.add_argument(
             "action",
             type=str,
@@ -308,6 +337,13 @@ class Command(BaseCommand):
                 CommandAction.UPDATE.value,
             ],
         )
+        subparser.add_argument(
+            "--using",
+            type=connection,
+            default=connection("default"),
+            help="Alias of the OpenSearch connection to use. Default to 'default'.",
+        )
+        subparser.add_argument("-d", "--database", default=None, dest="database", help="Nominates a database.")
         subparser.add_argument(
             "-f",
             "--filters",
@@ -383,6 +419,6 @@ class Command(BaseCommand):
         if "func" not in options:  # pragma: no cover
             self.stderr.write(self.usage)
             self.stderr.write(f"manage.py opensearch: error: no subcommand provided.")
-            exit(1)
+            raise CommandError
 
         options["func"](**options)
