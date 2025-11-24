@@ -60,9 +60,10 @@ positional arguments:
   INDEX                 Only manage the given indices.
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --force               Do not ask for confirmation.
-  --ignore-error        Do not stop on error.
+  -h, --help                 show this help message and exit
+  -u USING, --using USING    Alias of the OpenSearch connection to use. Default to 'default'.
+  --force                    Do not ask for confirmation.
+  --ignore-error             Do not stop on error.
 ```
 
 ### Description
@@ -80,10 +81,14 @@ created/deleted. If no index is provided, the action is applied to all indices.
 Use the `--force` options to bypass the confirmation step, and use the `--ignore-error` option to not stop on error (such as
 trying to create an already created index).
 
+You can specify which Opensearch connection to use with the `--using` option.
+
 ## `list` Subcommand
 
 The `list` subcommand displays a summary of each index, indicated whether they are created or not, and the number of
 document indexed.
+
+You can specify which Opensearch connection to use with the `--using` option.
 
 Sample output :
 
@@ -110,32 +115,33 @@ positional arguments:
   {index,delete,update}
                         Whether you want to create, delete or rebuild the indices.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  -f [FILTERS [FILTERS ...]], --filters [FILTERS [FILTERS ...]]
-                        Filter object in the queryset. Argument must be formatted as 
-                        '[lookup]=[value]', e.g. 'document_date__gte=2020-05-21. The accepted
-                        value type are:
-                            - 'None' ('[lookup]=')
-                            - 'float' ('[lookup]=1.12')
-                            - 'int' ('[lookup]=23')
-                            - 'datetime.date' ('[lookup]=2020-10-08')
-                            - 'list' ('[lookup]=1,2,3,4') Value between comma ',' can be of any
-                              other accepted value type
-                            - 'str' ('[lookup]=week')
-                        Values that didn't match any type above will be interpreted as a str.
-                        The list of lookup function can be found here:
-                        https://docs.djangoproject.com/en/dev/ref/models/querysets/#field-lookups
-  -e [EXCLUDES [EXCLUDES ...]], --excludes [EXCLUDES [EXCLUDES ...]]
-                        Exclude objects from the queryset. Argument must be formatted as
-                        '[lookup]=[value]', see '--filters' for more information.
+  -u USING, --using USING
+                        Alias of the OpenSearch connection to use. Default to 'default'.
+  -d DATABASE, --database DATABASE
+                        Nominates a database.
+  -f [FILTERS ...], --filters [FILTERS ...]
+                        Filter object in the queryset. Argument must be formatted as '[lookup]=[value]', e.g. 'document_date__gte=2020-05-21.
+                        The accepted value type are:
+                          - 'None' ('[lookup]=')
+                          - 'float' ('[lookup]=1.12')
+                          - 'int' ('[lookup]=23')
+                          - 'datetime.date' ('[lookup]=2020-10-08')
+                          - 'list' ('[lookup]=1,2,3,4') Value between comma ',' can be of any other accepted value type
+                          - 'str' ('[lookup]=week') Value that didn't match any type above will be interpreted as a str
+                        The list of lookup function can be found here: https://docs.djangoproject.com/en/dev/ref/models/querysets/#field-lookups
+  -e [EXCLUDES ...], --excludes [EXCLUDES ...]
+                        Exclude objects from the queryset. Argument must be formatted as '[lookup]=[value]', see '--filters' for more information
   --force               Do not ask for confirmation.
-  -i [INDICES [INDICES ...]], --indices [INDICES [INDICES ...]]
+  -i [INDICES ...], --indices [INDICES ...]
                         Only update documents on the given indices.
   -c COUNT, --count COUNT
                         Update at most COUNT objects (0 to index everything).
-  -p, --parallel        Parallelize the communication with Opensearch.
-  -r, --refresh         Make operations performed on the indices immediately available for search.
+  -r, --refresh         Whether the operations performed on the indices are immediately available for search. Default to `OPENSEARCH_DSL_AUTO_REFRESH` (which default to `False`)
+  --no-refresh
+  -p, --parallel        Whether to run bulk operations in parallel. Default to `OPENSEARCH_DSL_PARALLEL` (which default to `False`)
+  --no-parallel
   -m, --missing         When used with 'index' action, only index documents not indexed yet.
 ```
 

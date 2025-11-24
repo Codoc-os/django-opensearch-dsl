@@ -1,5 +1,17 @@
 # Changelog
 
+### 0.8.0 (2025-11-24)
+
+* Add `--using` and `--database` options to the CLI to respectively specify which
+  OpenSearch and database connection to use [#87](https://github.com/Codoc-os/django-opensearch-dsl/pull/87)).
+
+**BREAKING CHANGES**:
+
+* `django_opensearch_dsl.documents.Document.get_queryset` now take an optional `alias` argument to specify which
+  database connection to use.
+* `django_opensearch_dsl.documents.Document.get_indexing_queryset` now take an optional `alias` argument to specify
+  which database connection to use.
+
 ### 0.7.0 (2025-04-11)
 
 * `--refresh` and `--parallel` options of the CLI now default to the respective value of `OPENSEARCH_DSL_AUTO_REFRESH`

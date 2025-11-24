@@ -139,11 +139,12 @@ class EventDocument(Document):
 
 ---
 
-* `def get_indexing_queryset(self, filter_=None, exclude=None, count=None, verbose=False, action=CommandAction.INDEX, stdout=sys.stdout)`
+* `def get_indexing_queryset(self, filter_=None, exclude=None, alias=None, count=None, verbose=False, action=CommandAction.INDEX, stdout=sys.stdout)`
 
     * `filter_` (`Optional[Q]`) - Given to `get_queryset()`.
     * `exclude` (`Optional[Q]`) - Given to `get_queryset()`.
     * `count` (`Optional[int]`) - Given to `get_queryset()`.
+    * `alias` (`Optional[str]`) - Given to `get_queryset()`.
     * `verbose` (`bool`) - If set to `True`, will display the progression of the action on standard output.
     * `action` (`CommandAction`) - Used by the verbose.
     * `stdout` (`io.FileIO`) - Standard output used when verbose is `True` (default to `stdout`).
@@ -165,9 +166,9 @@ class EventDocument(Document):
     class Django:
         model = Event
 
-    def get_indexing_queryset(self):
+    def get_indexing_queryset(self, filter_=None, exclude=None, alias=None, count=None, verbose=False, action=CommandAction.INDEX, stdout=sys.stdout):
         """Use iterator to chunk the queryset, discarding any verbose."""
-        qs = self.get_queryset()
+        qs = self.get_queryset(filter_=filter_, exclude=exclude, count=count).using(alias)
         return qs.iterator()
 ```
 

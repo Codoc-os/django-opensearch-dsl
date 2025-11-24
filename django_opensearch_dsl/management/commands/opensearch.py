@@ -274,6 +274,7 @@ class Command(BaseCommand):
         )
         subparser.set_defaults(func=self.__list_index)
         subparser.add_argument(
+            "-u",
             "--using",
             type=connection,
             default=connection("default"),
@@ -288,6 +289,7 @@ class Command(BaseCommand):
         )
         subparser.set_defaults(func=self._manage_index)
         subparser.add_argument(
+            "-u",
             "--using",
             type=connection,
             default=connection("default"),
@@ -338,6 +340,7 @@ class Command(BaseCommand):
             ],
         )
         subparser.add_argument(
+            "-u",
             "--using",
             type=connection,
             default=connection("default"),
