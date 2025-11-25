@@ -180,8 +180,8 @@ jobs:
 
       - name: Creating Built Distributions
         run: |
-          pip install setuptools
-          python setup.py sdist
+          pip install build
+          python -m build
 
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
