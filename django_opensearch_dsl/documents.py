@@ -206,6 +206,7 @@ class Document(DSLDocument):
         self, actions: Iterable[dict[str, Any]], using: str = None, **kwargs: Any
     ) -> Union[tuple[int, int], tuple[int, list]]:
         """Execute given actions in bulk."""
+        kwargs.pop("alias", None)  # removed to avoid error in opensearchpy client
         response = bulk(client=self._get_connection(using), actions=actions, **kwargs)
         # send post index signal
         post_index.send(sender=self.__class__, instance=self, actions=actions, response=response)
