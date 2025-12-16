@@ -65,10 +65,10 @@ class Document(DSLDocument):
         )
 
     def get_queryset(
-        self, db_alias: str = None, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None
+        self, alias: str = None, filter_: Optional[Q] = None, exclude: Optional[Q] = None, count: int = None
     ) -> QuerySet:
         """Return the queryset that should be indexed by this doc type."""
-        qs = self.django.model.objects.using(db_alias).all()
+        qs = self.django.model.objects.using(alias).all()
 
         if filter_:
             qs = qs.filter(filter_)
@@ -91,7 +91,7 @@ class Document(DSLDocument):
 
     def get_indexing_queryset(
         self,
-        db_alias: str = None,
+        alias: str = None,
         verbose: bool = False,
         filter_: Optional[Q] = None,
         exclude: Optional[Q] = None,
@@ -103,7 +103,7 @@ class Document(DSLDocument):
     ) -> Iterable:
         """Divide the queryset into chunks."""
         chunk_size = batch_size or self.django.queryset_pagination
-        qs = self.get_queryset(db_alias=db_alias, filter_=filter_, exclude=exclude, count=count)
+        qs = self.get_queryset(alias=alias, filter_=filter_, exclude=exclude, count=count)
         qs = qs.order_by("pk")
         count = qs.count()
         model = self.django.model.__name__
@@ -195,6 +195,7 @@ class Document(DSLDocument):
 
     def bulk(self, actions, using=None, **kwargs):
         """Execute given actions in bulk."""
+        kwargs.pop("alias", None)  # Unkow parameters 'alias' in opensearch-py
         response = bulk(client=self._get_connection(using), actions=actions, **kwargs)
         # send post index signal
         post_index.send(sender=self.__class__, instance=self, actions=actions, response=response)

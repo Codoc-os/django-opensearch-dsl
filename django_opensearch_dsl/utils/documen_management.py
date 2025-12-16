@@ -98,8 +98,8 @@ def manage_document(
         exclude_ = exclude
         for model in selected_os_models:
             try:
-                kwargs_list.append({"db_alias": database, "filter_": filter_, "exclude": exclude_, "count": count})
-                qs = model().get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=database).count()
+                kwargs_list.append({"alias": database, "filter_": filter_, "exclude": exclude_, "count": count})
+                qs = model().get_queryset(filter_=filter_, exclude=exclude_, count=count, alias=database).count()
             except FieldError as e:
                 stderr.write(f"Error while filtering on '{model.django.model.__name__}':\n{e}'")  # noqa
                 exit(1)
@@ -115,8 +115,8 @@ def manage_document(
 
             document = index._doc_types[0]()  # noqa
             try:
-                kwargs_list.append({"db_alias": database, "filter_": filter_, "exclude": exclude_, "count": count})
-                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count, db_alias=database).count()
+                kwargs_list.append({"alias": database, "filter_": filter_, "exclude": exclude_, "count": count})
+                qs = document.get_queryset(filter_=filter_, exclude=exclude_, count=count, alias=database).count()
             except FieldError as e:
                 model = index._doc_types[0].django.model.__name__  # noqa
                 stderr.write(f"Error while filtering on '{model}' (from index '{index._name}'):\n{e}'")  # noqa
