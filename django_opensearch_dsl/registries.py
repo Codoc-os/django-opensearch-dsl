@@ -56,6 +56,7 @@ class DocumentRegistry:
                 "ignore_signals": getattr(django_meta, "ignore_signals", False),
                 "auto_refresh": getattr(django_meta, "auto_refresh", DODConfig.auto_refresh_enabled()),
                 "related_models": getattr(django_meta, "related_models", []),
+                "order_indexing_queryset": getattr(django_meta, "order_indexing_queryset", True),
             }
         )
         if not django_attr.model:  # pragma: no cover
@@ -193,6 +194,10 @@ class DocumentRegistry:
         raise TypeError(
             f"'in <{type(self).__name__}>' requires a Model subclass as left operand, not {type(dict).__name__}"
         )
+
+    def get_indices_raw(self) -> defaultdict[Index, set[type["Document"]]]:
+        """Get all indices as they are store in the registry or the indices for a list of models."""
+        return self._indices
 
 
 registry = DocumentRegistry()
